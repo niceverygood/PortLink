@@ -36,8 +36,9 @@ test('포워더 — 이메일+비밀번호 로그인 → /forwarder/dashboard', 
   await page.getByRole('button', { name: '로그인' }).click();
 
   await page.waitForURL(/\/forwarder\/dashboard/, { timeout: 10_000 });
-  await expect(page.getByRole('heading', { name: 'PortLink 대시보드' })).toBeVisible();
-  await expect(page.getByText('김담당')).toBeVisible();
+  // Stage 5: dashboard 헤딩 = "대시보드", Topbar에 사용자명 노출
+  await expect(page.getByRole('heading', { name: '대시보드' })).toBeVisible();
+  await expect(page.getByText('김담당').first()).toBeVisible();
 });
 
 test('차주 — 휴대폰 OTP 로그인 → /driver/jobs', async ({ page }) => {
