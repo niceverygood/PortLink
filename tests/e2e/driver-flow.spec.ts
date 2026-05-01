@@ -56,14 +56,15 @@ test('차주 모바일 UI — 시드 #1 수락 → 5단계 진행 → 완료', a
   await page.waitForURL(/\/driver\/jobs/);
 
   // ── 2. /driver/jobs에서 시드 #1 카드 보임
-  await expect(page.getByRole('heading', { name: '가용 배차' })).toBeVisible();
-  const card = page.getByText('D26-0001').first();
+  await expect(page.getByRole('heading', { name: /\d+건 대기중/ })).toBeVisible();
+  // 카드 컨테이너(rounded-3xl)를 D26-0001 텍스트로 필터링 후 그 안의 CTA 링크 클릭
+  const card = page.locator('div.rounded-3xl').filter({ hasText: 'D26-0001' });
   await expect(card).toBeVisible();
-  await card.click();
+  await card.getByRole('link', { name: /지금 수락하기/ }).click();
+  await page.waitForURL(/\/driver\/jobs\/[^/]+$/);
 
-  // ── 3. 상세 페이지에서 "지금 수락"
-  await expect(page.getByRole('heading', { name: '경기 이천' })).toBeVisible();
-  await page.getByRole('button', { name: '지금 수락' }).click();
+  // ── 3. 상세에서 "이 배차 수락하기"
+  await page.getByRole('button', { name: /이 배차 수락하기/ }).click();
   await page.waitForURL(/\/driver\/trip\/[^/]+/);
 
   // ── 4. 5단계 CTA 순차 클릭

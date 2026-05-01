@@ -7,11 +7,11 @@ import { Plus } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { dispatchOrderScope } from '@/lib/forwarder-scope';
-import { Button } from '@/components/ui/button';
+import { Topbar } from '@/components/forwarder/Topbar';
 import { DispatchListTable, type DispatchRow } from './dispatch-list-table';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: '배차 목록' };
+export const metadata = { title: '배차 관리' };
 
 export default async function DispatchListPage() {
   const session = await auth();
@@ -38,20 +38,23 @@ export default async function DispatchListPage() {
   }));
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-h1 font-semibold text-slate-900">배차 목록</h1>
-          <p className="mt-1 text-body-sm text-slate-500">본인 의뢰 {rows.length}건</p>
-        </div>
-        <Link href="/forwarder/dispatch/new">
-          <Button className="bg-brand-navy hover:bg-brand-navy-dark">
-            <Plus className="mr-1 size-4" /> 새 배차 등록
-          </Button>
-        </Link>
+    <>
+      <Topbar
+        title="배차 관리"
+        subtitle={`본인 의뢰 ${rows.length}건`}
+        actions={
+          <Link
+            href="/forwarder/dispatch/new"
+            className="inline-flex items-center gap-2 rounded-lg bg-brand-navy px-4 py-2 text-[13px] font-semibold text-white hover:bg-brand-navy-dark"
+          >
+            <Plus className="size-[15px]" strokeWidth={2.5} />
+            배차 등록
+          </Link>
+        }
+      />
+      <div className="flex-1 overflow-y-auto p-8">
+        <DispatchListTable rows={rows} />
       </div>
-
-      <DispatchListTable rows={rows} />
-    </div>
+    </>
   );
 }

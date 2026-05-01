@@ -54,7 +54,7 @@ async function loginDriverAndCompleteOrder(ctx: BrowserContext, baseURL: string,
 
   // 신규 주문 상세로 직접 이동
   await page.goto(`${baseURL}/driver/jobs/${orderId}`);
-  await page.getByRole('button', { name: '지금 수락' }).click();
+  await page.getByRole('button', { name: /이 배차 수락하기/ }).click();
   await page.waitForURL(/\/driver\/trip\/[^/]+/);
 
   for (const label of ['출발했어요', '상차 완료', '이동 시작', '하차 완료', '운송 완료']) {
@@ -72,32 +72,29 @@ test('포워더 풀 사이클 — 3-step 등록 → 차주 완료 → 정산 발
   const fPage = await loginForwarder(fCtx, baseURL!);
   await expect(fPage.getByRole('heading', { name: '대시보드' })).toBeVisible();
 
-  // ── 2. 새 배차 등록 3-Step
+  // ── 2. 배차 등록 (단일 페이지 3-section 폼)
   await fPage.goto(`${baseURL}/forwarder/dispatch/new`);
-  await expect(fPage.getByRole('heading', { name: '새 배차 등록' })).toBeVisible();
+  await expect(fPage.getByRole('heading', { name: '배차 등록' })).toBeVisible();
 
-  // Step 1: 출발지
-  await fPage.getByRole('combobox').first().click();
-  await fPage.getByRole('option', { name: '경기 평택' }).click();
-  await fPage.getByLabel('상세 주소').fill('E2E 시연용 한진센터');
-  await fPage.getByRole('button', { name: '다음' }).click();
-
-  // Step 2: 항만/차종/시각 — combobox 순서: 항만, 차종
+  // STEP 1: 출발지(combobox 1) + 항만(combobox 2) + 상세 주소
   const combos = fPage.getByRole('combobox');
-  await combos.first().click();
+  await combos.nth(0).click();
+  await fPage.getByRole('option', { name: '경기 평택' }).click();
+  await combos.nth(1).click();
   await fPage.getByRole('option', { name: '부산항' }).click();
-  await combos.last().click();
-  await fPage.getByRole('option', { name: '40FT', exact: true }).click();
-  // datetime-local: 내일 14:00
+  await fPage.getByLabel('상세 주소').fill('E2E 시연용 한진센터');
+
+  // STEP 2: 차종 — 버튼 카드 "40FT" 클릭 (기본 선택이지만 명시 클릭으로 확실히)
+  await fPage.getByRole('button', { name: /^40FT/ }).click();
+
+  // STEP 3: 상차 시각 + 운임
   const tomorrow = new Date(Date.now() + 24 * 3600_000);
   const dt = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}T14:00`;
   await fPage.getByLabel('상차 희망 시각').fill(dt);
-  await fPage.getByRole('button', { name: '다음' }).click();
-
-  // Step 3: 운임
   await fPage.getByLabel('운임 (원)').fill('750000');
-  await fPage.getByRole('button', { name: '배차 등록' }).click();
-  // /forwarder/dispatch/<cuid> — 'new' 제외 (cuid는 영숫자 20자 이상)
+
+  // 사이드 CTA "배차 등록" 클릭 (Topbar에도 같은 텍스트 버튼 있어 last로 사이드 CTA 선택)
+  await fPage.getByRole('button', { name: '배차 등록' }).last().click();
   await fPage.waitForURL(/\/forwarder\/dispatch\/[a-z0-9]{20,}/);
 
   // 신규 주문 ID URL에서 추출

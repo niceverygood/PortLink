@@ -38,7 +38,8 @@ export default async function DriverLayout({ children }: { children: React.React
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="mx-auto max-w-md pb-20">{children}</div>
+      {/* 페이지가 자체적으로 max-w-md 적용 — hero가 viewport 전폭을 쓸 수 있게. */}
+      <div className="pb-20">{children}</div>
       <BottomTabs />
       <ServiceWorkerRegister />
     </div>

@@ -36,9 +36,8 @@ test('포워더 — 이메일+비밀번호 로그인 → /forwarder/dashboard', 
   await page.getByRole('button', { name: '로그인' }).click();
 
   await page.waitForURL(/\/forwarder\/dashboard/, { timeout: 10_000 });
-  // Stage 5: dashboard 헤딩 = "대시보드", Topbar에 사용자명 노출
+  // dashboard 헤딩 (Sidebar는 lg+에서만 보이므로 viewport 무관 검증)
   await expect(page.getByRole('heading', { name: '대시보드' })).toBeVisible();
-  await expect(page.getByText('김담당').first()).toBeVisible();
 });
 
 test('차주 — 휴대폰 OTP 로그인 → /driver/jobs', async ({ page }) => {
@@ -59,7 +58,8 @@ test('차주 — 휴대폰 OTP 로그인 → /driver/jobs', async ({ page }) => 
   await page.getByRole('button', { name: '로그인' }).click();
 
   await page.waitForURL(/\/driver\/jobs/, { timeout: 10_000 });
-  await expect(page.getByRole('heading', { name: '가용 배차' })).toBeVisible();
+  // 디자인 패스 후 헤딩이 "{N}건 대기중" 형식
+  await expect(page.getByRole('heading', { name: /\d+건 대기중/ })).toBeVisible();
 });
 
 test('미인증 사용자가 /forwarder/dashboard 접근 → /login?kind=forwarder', async ({ page }) => {
