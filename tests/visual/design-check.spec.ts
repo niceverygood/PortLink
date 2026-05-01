@@ -60,7 +60,19 @@ async function loginForwarder(page: Page) {
   await page.waitForURL(/\/forwarder\/dashboard/);
 }
 
+async function ensureOpenOrderForDriver() {
+  // E2E가 시드 #1을 COMPLETED로 만들 수 있어, 시각 검증용 신선한 OPEN 1건 보장.
+  const seed1 = await prisma.dispatchOrder.findUnique({ where: { orderNo: 'D26-0001' } });
+  if (seed1 && seed1.status !== 'OPEN') {
+    await prisma.settlement.deleteMany({ where: { trip: { dispatchOrderId: seed1.id } } });
+    await prisma.trip.deleteMany({ where: { dispatchOrderId: seed1.id } });
+    await prisma.dispatchAssign.deleteMany({ where: { dispatchOrderId: seed1.id } });
+    await prisma.dispatchOrder.update({ where: { id: seed1.id }, data: { status: 'OPEN' } });
+  }
+}
+
 async function loginDriver(page: Page) {
+  await ensureOpenOrderForDriver();
   await prisma.otpCode.deleteMany({ where: { phone: DRIVER_PHONE } });
   await page.goto('/login');
   await page.getByRole('tab', { name: '차주 로그인' }).click();

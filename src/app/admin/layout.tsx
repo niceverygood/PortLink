@@ -19,7 +19,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <QueryProvider>
       <div className="flex min-h-screen bg-slate-50">
-        <AdminSidebar />
+        <AdminSidebar userName={session.user.name ?? undefined} />
         <div className="flex min-w-0 flex-1 flex-col">{children}</div>
       </div>
     </QueryProvider>
