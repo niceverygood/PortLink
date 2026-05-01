@@ -25,7 +25,10 @@ npm run db:up
 npm run prisma:migrate
 npm run prisma:generate
 
-# 5. 개발 서버
+# 5. 시드 (관리자/포워더/운송사/차주 5명, 안전운임 450건, 샘플 배차 3건)
+npm run seed
+
+# 6. 개발 서버
 npm run dev
 ```
 

@@ -1,6 +1,5 @@
-// PortLink Prisma schema
-// Stage 0: 마이그레이션 파이프라인 검증용 최소 모델 (HealthCheck).
-// Stage 1에서 본격 도메인 모델 (User, TruckDriver, Carrier, ...) 로 교체.
+// PortLink — 컨테이너 운송 배차 플랫폼 도메인 모델
+// CLAUDE.md §6 기준. KRW는 정수, snake_case DB 매핑, Asia/Seoul는 application layer.
 
 generator client {
   provider = "prisma-client-js"
@@ -11,11 +10,318 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model HealthCheck {
-  id        Int      @id @default(autoincrement())
-  service   String
-  ok        Boolean  @default(true)
-  createdAt DateTime @default(now()) @map("created_at")
+// ─────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────
 
-  @@map("health_check")
+enum UserRole {
+  DRIVER
+  CARRIER
+  FORWARDER
+  ADMIN
+}
+
+enum UserStatus {
+  PENDING_APPROVAL // 가입 후 관리자 승인 대기
+  ACTIVE
+  SUSPENDED
+}
+
+enum ContainerType {
+  TWENTY_FT      @map("20FT")
+  FORTY_FT       @map("40FT")
+  FORTY_FT_HC    @map("40FT_HC")
+}
+
+enum PortCode {
+  BUSAN
+  BUSAN_NEW
+  INCHEON
+  GWANGYANG
+  PYEONGTAEK
+}
+
+enum DispatchOrderStatus {
+  OPEN       // 등록됨, 매칭 대기
+  ASSIGNED   // 차주 수락 완료
+  COMPLETED  // 운송 완료
+  CANCELLED  // 취소
+}
+
+enum TripStatus {
+  PENDING     // 배정됐으나 출발 전
+  DEPARTED    // 출발
+  LOADED      // 상차 완료
+  IN_TRANSIT  // 이동중
+  UNLOADED    // 하차 완료
+  COMPLETED   // 운송 완료
+  CANCELLED   // 취소
+}
+
+enum SettlementStatus {
+  DRAFT       // 자동 생성, 미확정
+  CONFIRMED   // 차주/포워더 양측 확인
+  PAID        // 정산 완료
+  CANCELLED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  STATUS_CHANGE
+  LOGIN
+  PERMISSION
+}
+
+// ─────────────────────────────────────────────
+// Core
+// ─────────────────────────────────────────────
+
+model User {
+  id           String     @id @default(cuid())
+  email        String?    @unique
+  phone        String     @unique          // 차주는 휴대폰 OTP, 그 외는 이메일+phone 보조
+  passwordHash String?    @map("password_hash")
+  name         String
+  role         UserRole
+  status       UserStatus @default(PENDING_APPROVAL)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  // 1:1 (역할별 프로필)
+  truckDriver TruckDriver?
+  carrier     Carrier?
+  forwarder   Forwarder?
+
+  // 1:N
+  dispatchOrders DispatchOrder[] @relation("ForwarderOrders")
+  auditLogs      AuditLog[]      @relation("ActorAuditLogs")
+
+  @@index([role, status])
+  @@map("users")
+}
+
+model TruckDriver {
+  id          String   @id @default(cuid())
+  userId      String   @unique @map("user_id")
+  driverCode  String   @unique @map("driver_code")          // 사람용 식별자, 예: D-0001
+  licenseNo   String   @unique @map("license_no")           // 화물운송종사자 자격증
+  bankName    String   @map("bank_name")
+  bankAccount String   @map("bank_account")
+  rating      Decimal  @default(5.0) @db.Decimal(3, 2)
+  totalTrips  Int      @default(0) @map("total_trips")
+  carrierId   String?  @map("carrier_id")                  // 자가운송사 소속 차주는 NULL 아님
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  carrier  Carrier?  @relation(fields: [carrierId], references: [id], onDelete: SetNull)
+  vehicles Vehicle[]
+  trips    Trip[]
+  assigns  DispatchAssign[]
+
+  @@index([carrierId])
+  @@map("truck_drivers")
+}
+
+model Carrier {
+  id              String   @id @default(cuid())
+  userId          String   @unique @map("user_id")          // 운송사 대표 계정
+  companyName     String   @map("company_name")
+  businessRegNo   String   @unique @map("business_reg_no")  // 사업자등록번호
+  representative  String                                    // 대표자명
+  isInhouse       Boolean  @default(false) @map("is_inhouse") // 자가운송사(차주가 직접 등록한 1인 법인)
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  drivers  TruckDriver[]
+  vehicles Vehicle[]
+
+  @@map("carriers")
+}
+
+model Forwarder {
+  id              String   @id @default(cuid())
+  userId          String   @unique @map("user_id")
+  companyName     String   @map("company_name")
+  businessRegNo   String   @unique @map("business_reg_no")
+  representative  String
+  contactPhone    String   @map("contact_phone")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("forwarders")
+}
+
+model Vehicle {
+  id          String        @id @default(cuid())
+  plateNo     String        @unique @map("plate_no")        // 차량번호
+  type        ContainerType
+  driverId    String?       @map("driver_id")               // 차주 소유 (대부분)
+  carrierId   String?       @map("carrier_id")              // 운송사 소유 (자가운송사 포함)
+  isActive    Boolean       @default(true) @map("is_active")
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  driver  TruckDriver? @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  carrier Carrier?     @relation(fields: [carrierId], references: [id], onDelete: SetNull)
+  trips   Trip[]
+
+  // 차주 또는 운송사 둘 중 하나는 반드시 소유 — 애플리케이션 레이어에서 강제
+  @@index([driverId])
+  @@index([carrierId])
+  @@map("vehicles")
+}
+
+// ─────────────────────────────────────────────
+// 안전운임 마스터
+// ─────────────────────────────────────────────
+
+model SafeRate {
+  id            Int           @id @default(autoincrement())
+  originRegion  String        @map("origin_region")     // "경기 평택"
+  port          PortCode
+  containerType ContainerType @map("container_type")
+  baseFare      Int           @map("base_fare")          // KRW 정수
+  effectiveFrom DateTime      @default(now()) @map("effective_from")
+  effectiveTo   DateTime?     @map("effective_to")
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  @@unique([originRegion, port, containerType, effectiveFrom], name: "uniq_safe_rate")
+  @@index([port, containerType])
+  @@map("safe_rates")
+}
+
+// ─────────────────────────────────────────────
+// 배차/운송
+// ─────────────────────────────────────────────
+
+model DispatchOrder {
+  id              String              @id @default(cuid())
+  orderNo         String              @unique @map("order_no") // 사람용 번호: D26-0001
+  forwarderUserId String              @map("forwarder_user_id")
+  originRegion    String              @map("origin_region")    // 시군구 단위
+  originAddress   String              @map("origin_address")   // 상세 주소
+  port            PortCode
+  containerType   ContainerType       @map("container_type")
+  containerNo     String?             @map("container_no")     // 컨테이너 번호 (배차 시점에 미정 가능)
+  pickupAt        DateTime            @map("pickup_at")        // 상차 희망 시각 (UTC)
+  fare            Int                                          // 안전운임 KRW 정수
+  status          DispatchOrderStatus @default(OPEN)
+  notes           String?
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+
+  forwarder User             @relation("ForwarderOrders", fields: [forwarderUserId], references: [id], onDelete: Restrict)
+  assigns   DispatchAssign[]
+  trip      Trip?
+
+  @@index([status, pickupAt])
+  @@index([forwarderUserId])
+  @@index([port, containerType])
+  @@map("dispatch_orders")
+}
+
+model DispatchAssign {
+  id              String   @id @default(cuid())
+  dispatchOrderId String   @map("dispatch_order_id")
+  driverId        String   @map("driver_id")
+  acceptedAt      DateTime @default(now()) @map("accepted_at")
+  cancelledAt     DateTime? @map("cancelled_at")
+  cancelReason    String?   @map("cancel_reason")
+
+  dispatchOrder DispatchOrder @relation(fields: [dispatchOrderId], references: [id], onDelete: Cascade)
+  driver        TruckDriver   @relation(fields: [driverId], references: [id], onDelete: Restrict)
+
+  // 한 배차는 활성 배정 1개 (cancelledAt IS NULL) — 애플리케이션 레이어 강제
+  @@index([dispatchOrderId])
+  @@index([driverId])
+  @@map("dispatch_assigns")
+}
+
+model Trip {
+  id              String     @id @default(cuid())
+  dispatchOrderId String     @unique @map("dispatch_order_id")
+  driverId        String     @map("driver_id")
+  vehicleId       String     @map("vehicle_id")
+  status          TripStatus @default(PENDING)
+  departedAt      DateTime?  @map("departed_at")
+  loadedAt        DateTime?  @map("loaded_at")
+  unloadedAt      DateTime?  @map("unloaded_at")
+  completedAt     DateTime?  @map("completed_at")
+  cancelledAt     DateTime?  @map("cancelled_at")
+  cancelReason    String?    @map("cancel_reason")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  dispatchOrder DispatchOrder @relation(fields: [dispatchOrderId], references: [id], onDelete: Restrict)
+  driver        TruckDriver   @relation(fields: [driverId], references: [id], onDelete: Restrict)
+  vehicle       Vehicle       @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  settlement    Settlement?
+
+  @@index([driverId, status])
+  @@index([status])
+  @@map("trips")
+}
+
+// ─────────────────────────────────────────────
+// 정산
+// ─────────────────────────────────────────────
+
+model Settlement {
+  id           String           @id @default(cuid())
+  tripId       String           @unique @map("trip_id")
+  fare         Int                                              // 총 운임 KRW
+  platformFee  Int              @map("platform_fee")            // 플랫폼 수수료 KRW
+  driverPayout Int              @map("driver_payout")           // 차주 수령액 KRW (= fare - platformFee)
+  status       SettlementStatus @default(DRAFT)
+  confirmedAt  DateTime?        @map("confirmed_at")
+  paidAt       DateTime?        @map("paid_at")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  trip       Trip        @relation(fields: [tripId], references: [id], onDelete: Restrict)
+  taxInvoice TaxInvoice?
+
+  // CHECK 제약: driverPayout = fare - platformFee  (raw migration에서 추가)
+  @@index([status])
+  @@map("settlements")
+}
+
+model TaxInvoice {
+  id            String    @id @default(cuid())
+  settlementId  String    @unique @map("settlement_id")
+  invoiceNo     String    @unique @map("invoice_no")
+  amount        Int                                  // 공급가액 (= driverPayout)
+  taxAmount     Int       @map("tax_amount")          // 세액 (보통 0, 화물운송 면세)
+  issuedAt      DateTime  @default(now()) @map("issued_at")
+  externalRef   String?   @map("external_ref")        // 국세청 발행 ID (Phase 2 stub)
+
+  settlement Settlement @relation(fields: [settlementId], references: [id], onDelete: Restrict)
+
+  @@map("tax_invoices")
+}
+
+// ─────────────────────────────────────────────
+// 감사 로그
+// ─────────────────────────────────────────────
+
+model AuditLog {
+  id          BigInt      @id @default(autoincrement())
+  actorUserId String?     @map("actor_user_id")
+  entity      String                                  // "DispatchOrder", "Trip" ...
+  entityId    String      @map("entity_id")
+  action      AuditAction
+  before      Json?
+  after       Json?
+  ipAddress   String?     @map("ip_address")
+  userAgent   String?     @map("user_agent")
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  actor User? @relation("ActorAuditLogs", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([entity, entityId])
+  @@index([actorUserId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }
