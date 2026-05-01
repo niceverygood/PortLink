@@ -118,10 +118,10 @@ test('풀 사이클 — 포워더 등록 → 차주 수락 → 운송 진행 →
   const items = (list.json as { ok: true; data: Array<{ id: string }> }).data;
   expect(items.find((o) => o.id === orderId)).toBeDefined();
 
-  // ── 3. 차주 수락
+  // ── 3. 차주 수락 (응답 형식: { orderId, tripId })
   const accept = await jsonReq(dApi, 'POST', `/api/dispatch-orders/${orderId}/accept`);
   expect(accept.status).toBe(201);
-  const tripId = (accept.json as { ok: true; data: { trip: { id: string } } }).data.trip.id;
+  const tripId = (accept.json as { ok: true; data: { tripId: string } }).data.tripId;
 
   // ── 4. 상태 전환 PENDING → DEPARTED → LOADED → IN_TRANSIT → UNLOADED → COMPLETED
   for (const next of ['DEPARTED', 'LOADED', 'IN_TRANSIT', 'UNLOADED', 'COMPLETED']) {

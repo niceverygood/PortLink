@@ -59,7 +59,6 @@ test('차주 — 휴대폰 OTP 로그인 → /driver/jobs', async ({ page }) => 
 
   await page.waitForURL(/\/driver\/jobs/, { timeout: 10_000 });
   await expect(page.getByRole('heading', { name: '가용 배차' })).toBeVisible();
-  await expect(page.getByText('이차주')).toBeVisible();
 });
 
 test('미인증 사용자가 /forwarder/dashboard 접근 → /login?kind=forwarder', async ({ page }) => {

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#FF6B35"/>
+  <g transform="translate(96 176) scale(1.6)" stroke="white" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="0" y="0" width="200" height="100" rx="6"/>
+    <path d="M30 12v76M60 12v76M90 12v76M120 12v76M150 12v76M180 12v76"/>
+    <path d="M-2 6h204M-2 94h204" stroke-width="14"/>
+  </g>
+  <text x="256" y="448" text-anchor="middle" font-family="-apple-system, system-ui, sans-serif" font-size="56" font-weight="700" fill="white">PortLink</text>
+</svg>

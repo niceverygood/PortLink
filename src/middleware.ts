@@ -30,8 +30,13 @@ function loginRedirect(req: NextRequest, kind: 'forwarder' | 'driver' | 'admin')
   return NextResponse.redirect(url);
 }
 
+// PWA 매니페스트는 인증 없이 접근 가능해야 "홈 화면 추가" 동작.
+const PUBLIC_PATHS = new Set(['/forwarder/manifest.webmanifest', '/driver/manifest.webmanifest']);
+
 export default authEdge((req) => {
   const { pathname } = req.nextUrl;
+  if (PUBLIC_PATHS.has(pathname)) return NextResponse.next();
+
   const role = req.auth?.user?.role;
 
   if (pathname.startsWith('/forwarder')) {
