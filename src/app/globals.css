@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * shadcn/ui semantic tokens (slate base, light mode only).
+ * Brand colors live in tailwind.config.ts as `bg-brand-*` utilities.
+ * Dark mode은 MVP에서 사용 안 함 (Stage 0).
+ */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47.4% 11.2%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 47.4% 11.2%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+
+    --primary: 215 54% 15%; /* brand-navy 근사 */
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 72% 51%; /* brand-error 근사 */
+    --destructive-foreground: 210 40% 98%;
+
+    --ring: 215 54% 15%;
+
+    --radius: 0.5rem;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    font-feature-settings: 'cv11', 'ss01';
+  }
+}
+
+@layer utilities {
+  /* 정산/운임 등 숫자 정렬용 */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}

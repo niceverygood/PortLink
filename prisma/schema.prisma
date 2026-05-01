@@ -1,0 +1,21 @@
+// PortLink Prisma schema
+// Stage 0: 마이그레이션 파이프라인 검증용 최소 모델 (HealthCheck).
+// Stage 1에서 본격 도메인 모델 (User, TruckDriver, Carrier, ...) 로 교체.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model HealthCheck {
+  id        Int      @id @default(autoincrement())
+  service   String
+  ok        Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("health_check")
+}
