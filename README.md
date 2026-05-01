@@ -18,7 +18,7 @@ npm install
 # 2. 환경 변수
 cp .env.example .env
 
-# 3. PostgreSQL (Docker Desktop 실행 후)
+# 3. PostgreSQL (Docker Desktop / OrbStack 실행 후, host 5433 → container 5432)
 npm run db:up
 
 # 4. Prisma 마이그레이션 + 클라이언트 생성

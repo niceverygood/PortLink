@@ -9,7 +9,9 @@ services:
       POSTGRES_DB: portlink
       TZ: Asia/Seoul
     ports:
-      - '5432:5432'
+      # 호스트 postgresql@16(brew)이 5432를 점유할 수 있어 5433으로 매핑.
+      # 컨테이너 내부는 5432 그대로.
+      - '5433:5432'
     volumes:
       - portlink_pgdata:/var/lib/postgresql/data
     healthcheck:
