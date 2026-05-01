@@ -23,6 +23,7 @@ import {
 import { CONTAINER_TYPE_COEFFICIENT, REGIONS } from '../src/config/regions';
 import { BUSINESS_RULES } from '../src/config/business-rules';
 import { CONTAINER_TYPE_TO_WIRE } from '../src/lib/prisma-enums';
+import { hashPassword } from '../src/lib/auth/passwords';
 
 const prisma = new PrismaClient();
 
@@ -82,13 +83,22 @@ async function seedSafeRates() {
 }
 
 async function seedUsersAndProfiles() {
+  // 이메일 사용자(관리자/포워더/운송사)에게는 시드 비밀번호를 해싱해 박는다.
+  // 차주는 OTP 로그인이라 passwordHash NULL 유지.
+  const seedPassword = process.env.SEED_PASSWORD;
+  if (!seedPassword) {
+    throw new Error('SEED_PASSWORD 환경변수가 비어 있음. .env.example 참조.');
+  }
+  const seedPasswordHash = await hashPassword(seedPassword);
+
   // 1. 관리자
   const admin = await prisma.user.upsert({
     where: { phone: '010-0000-0001' },
-    update: {},
+    update: { passwordHash: seedPasswordHash },
     create: {
       phone: '010-0000-0001',
       email: 'admin@portlink.kr',
+      passwordHash: seedPasswordHash,
       name: 'PortLink 관리자',
       role: UserRole.ADMIN,
       status: UserStatus.ACTIVE,
@@ -98,10 +108,11 @@ async function seedUsersAndProfiles() {
   // 2. 포워더 (시연용 한진로지스틱스 담당자)
   const forwarderUser = await prisma.user.upsert({
     where: { phone: '010-1000-0001' },
-    update: {},
+    update: { passwordHash: seedPasswordHash },
     create: {
       phone: '010-1000-0001',
       email: 'kim@hanjin-demo.kr',
+      passwordHash: seedPasswordHash,
       name: '김담당',
       role: UserRole.FORWARDER,
       status: UserStatus.ACTIVE,
@@ -122,10 +133,11 @@ async function seedUsersAndProfiles() {
   // 3. 운송사 (자가운송사)
   const carrierUser = await prisma.user.upsert({
     where: { phone: '010-2000-0001' },
-    update: {},
+    update: { passwordHash: seedPasswordHash },
     create: {
       phone: '010-2000-0001',
       email: 'kim@inhouse-demo.kr',
+      passwordHash: seedPasswordHash,
       name: '김사장',
       role: UserRole.CARRIER,
       status: UserStatus.ACTIVE,

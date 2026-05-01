@@ -26,6 +26,8 @@ npm run prisma:migrate
 npm run prisma:generate
 
 # 5. 시드 (관리자/포워더/운송사/차주 5명, 안전운임 450건, 샘플 배차 3건)
+#    이메일 사용자(관리자/포워더/운송사)에게 SEED_PASSWORD가 argon2로 박힘
+#    차주는 OTP만으로 로그인 (passwordHash NULL)
 npm run seed
 
 # 6. 개발 서버

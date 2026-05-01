@@ -86,6 +86,7 @@ model User {
   name         String
   role         UserRole
   status       UserStatus @default(PENDING_APPROVAL)
+  lastLoginAt  DateTime?  @map("last_login_at")
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
 
@@ -300,6 +301,25 @@ model TaxInvoice {
   settlement Settlement @relation(fields: [settlementId], references: [id], onDelete: Restrict)
 
   @@map("tax_invoices")
+}
+
+// ─────────────────────────────────────────────
+// 인증 — OTP 코드
+// ─────────────────────────────────────────────
+
+model OtpCode {
+  id          BigInt    @id @default(autoincrement())
+  phone       String                                       // 가입/로그인 시도 phone (User 미존재 가능, 그래서 FK 없음)
+  code        String                                       // 6자리 숫자
+  expiresAt   DateTime  @map("expires_at")                 // 발급 + 5분
+  consumedAt  DateTime? @map("consumed_at")                // 검증 성공 시 세팅 (재사용 방지)
+  attempts    Int       @default(0)                        // verify 실패 횟수, 5 이상이면 만료 처리
+  ipAddress   String?   @map("ip_address")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([phone, createdAt])
+  @@index([expiresAt])
+  @@map("otp_codes")
 }
 
 // ─────────────────────────────────────────────
