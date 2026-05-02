@@ -22,7 +22,11 @@ export default function LoginPageClient({ testLoginEnabled = false }: Props) {
   const kind = (params.get('kind') as Kind) ?? null;
   const errorCode = params.get('error');
 
-  const defaultTab = kind === 'driver' ? 'driver' : 'business';
+  // kind 파라미터 있으면 해당 폼만 노출 (랜딩에서 이미 분기 — 중복 탭 제거).
+  // kind=null (직접 /login 접근)일 때만 탭으로 선택 가능.
+  const showDriverOnly = kind === 'driver';
+  const showBusinessOnly = kind === 'forwarder' || kind === 'admin';
+  const showTabs = !showDriverOnly && !showBusinessOnly;
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -32,15 +36,13 @@ export default function LoginPageClient({ testLoginEnabled = false }: Props) {
         </Link>
 
         {kind && (
-          <Alert className="mb-4">
-            <AlertDescription>
-              {kind === 'driver'
-                ? '차주 로그인 후 이용 가능한 페이지입니다.'
-                : kind === 'admin'
-                  ? '관리자 로그인이 필요합니다.'
-                  : '담당자 로그인 후 이용 가능한 페이지입니다.'}
-            </AlertDescription>
-          </Alert>
+          <p className="mb-4 text-center text-body-sm text-slate-500">
+            {kind === 'driver'
+              ? '차주 로그인'
+              : kind === 'admin'
+                ? '관리자 로그인'
+                : '담당자 로그인 (포워더 · 운송사)'}
+          </p>
         )}
 
         {errorCode && (
@@ -51,13 +53,8 @@ export default function LoginPageClient({ testLoginEnabled = false }: Props) {
           </Alert>
         )}
 
-        <Tabs defaultValue={defaultTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="business">담당자 로그인</TabsTrigger>
-            <TabsTrigger value="driver">차주 로그인</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="business" className="mt-4">
+        {showBusinessOnly && (
+          <>
             <BusinessLoginForm callbackUrl={next || '/forwarder/dashboard'} />
             <p className="mt-4 text-center text-body-sm text-slate-500">
               계정이 없으신가요?{' '}
@@ -69,9 +66,17 @@ export default function LoginPageClient({ testLoginEnabled = false }: Props) {
                 운송사 가입
               </Link>
             </p>
-          </TabsContent>
+            <p className="mt-2 text-center text-caption text-slate-400">
+              차주이신가요?{' '}
+              <Link href="/login?kind=driver" className="text-brand-orange underline">
+                차주 로그인으로
+              </Link>
+            </p>
+          </>
+        )}
 
-          <TabsContent value="driver" className="mt-4">
+        {showDriverOnly && (
+          <>
             <DriverLoginForm callbackUrl={next || '/driver/jobs'} />
             <p className="mt-4 text-center text-body-sm text-slate-500">
               계정이 없으신가요?{' '}
@@ -79,8 +84,47 @@ export default function LoginPageClient({ testLoginEnabled = false }: Props) {
                 차주 가입
               </Link>
             </p>
-          </TabsContent>
-        </Tabs>
+            <p className="mt-2 text-center text-caption text-slate-400">
+              담당자이신가요?{' '}
+              <Link href="/login?kind=forwarder" className="text-brand-navy underline">
+                담당자 로그인으로
+              </Link>
+            </p>
+          </>
+        )}
+
+        {showTabs && (
+          <Tabs defaultValue="business" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="business">담당자 로그인</TabsTrigger>
+              <TabsTrigger value="driver">차주 로그인</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="business" className="mt-4">
+              <BusinessLoginForm callbackUrl={next || '/forwarder/dashboard'} />
+              <p className="mt-4 text-center text-body-sm text-slate-500">
+                계정이 없으신가요?{' '}
+                <Link href="/signup/forwarder" className="text-brand-navy underline">
+                  포워더 가입
+                </Link>{' '}
+                ·{' '}
+                <Link href="/signup/carrier" className="text-brand-navy underline">
+                  운송사 가입
+                </Link>
+              </p>
+            </TabsContent>
+
+            <TabsContent value="driver" className="mt-4">
+              <DriverLoginForm callbackUrl={next || '/driver/jobs'} />
+              <p className="mt-4 text-center text-body-sm text-slate-500">
+                계정이 없으신가요?{' '}
+                <Link href="/signup/driver" className="text-brand-orange underline">
+                  차주 가입
+                </Link>
+              </p>
+            </TabsContent>
+          </Tabs>
+        )}
 
         {testLoginEnabled && <TestLoginPanel next={next} />}
       </div>
