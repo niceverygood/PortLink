@@ -42,9 +42,9 @@ export default function () {
   const res = http.get(`${BASE}/api/healthz`);
   check(res, {
     'status 200': (r) => r.status === 200,
-    'db up': (r) => {
+    'ok flag': (r) => {
       try {
-        return r.json('db') === 'up';
+        return r.json('ok') === true;
       } catch {
         return false;
       }
