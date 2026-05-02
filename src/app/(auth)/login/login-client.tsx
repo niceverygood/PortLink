@@ -72,6 +72,7 @@ export default function LoginPageClient({ testLoginEnabled = false }: Props) {
                 차주 로그인으로
               </Link>
             </p>
+            {testLoginEnabled && <BusinessTestPanel next={next} />}
           </>
         )}
 
@@ -90,6 +91,7 @@ export default function LoginPageClient({ testLoginEnabled = false }: Props) {
                 담당자 로그인으로
               </Link>
             </p>
+            {testLoginEnabled && <DriverTestPanel next={next} />}
           </>
         )}
 
@@ -112,6 +114,7 @@ export default function LoginPageClient({ testLoginEnabled = false }: Props) {
                   운송사 가입
                 </Link>
               </p>
+              {testLoginEnabled && <BusinessTestPanel next={next} />}
             </TabsContent>
 
             <TabsContent value="driver" className="mt-4">
@@ -122,17 +125,20 @@ export default function LoginPageClient({ testLoginEnabled = false }: Props) {
                   차주 가입
                 </Link>
               </p>
+              {testLoginEnabled && <DriverTestPanel next={next} />}
             </TabsContent>
           </Tabs>
         )}
-
-        {testLoginEnabled && <TestLoginPanel next={next} />}
       </div>
     </main>
   );
 }
 
-function TestLoginPanel({ next }: { next: string }) {
+/**
+ * 시연용 1-Click 로그인 — `SEED_PASSWORD` env가 있을 때만 노출.
+ * 폼이 보이는 화면(담당자 vs 차주)에 맞춰 해당 역할의 계정만 표시.
+ */
+function useTestLogin(next: string) {
   const [pending, setPending] = useState<string | null>(null);
 
   async function login(kind: string, defaultRedirect: string) {
@@ -145,16 +151,26 @@ function TestLoginPanel({ next }: { next: string }) {
     });
   }
 
-  const drivers = [1, 2, 3, 4, 5];
+  return { pending, login };
+}
 
+function TestPanelShell({ children }: { children: React.ReactNode }) {
   return (
-    <section className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
+    <section className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
       <p className="mb-1 text-caption font-semibold text-amber-700">⚡ 시연용 1-Click 로그인</p>
       <p className="mb-3 text-caption text-amber-700/80">
         SEED_PASSWORD가 설정된 환경에서만 노출됩니다 (운영에선 비워서 자동 차단).
       </p>
+      {children}
+    </section>
+  );
+}
 
-      <div className="mb-2 grid grid-cols-3 gap-2">
+function BusinessTestPanel({ next }: { next: string }) {
+  const { pending, login } = useTestLogin(next);
+  return (
+    <TestPanelShell>
+      <div className="grid grid-cols-3 gap-2">
         <TestBtn
           label="관리자"
           sub="admin@portlink.kr"
@@ -174,8 +190,15 @@ function TestLoginPanel({ next }: { next: string }) {
           onClick={() => login('carrier', '/forwarder/dashboard')}
         />
       </div>
+    </TestPanelShell>
+  );
+}
 
-      <p className="mb-1 text-caption text-amber-700">차주 (모바일 PWA):</p>
+function DriverTestPanel({ next }: { next: string }) {
+  const { pending, login } = useTestLogin(next);
+  const drivers = [1, 2, 3, 4, 5];
+  return (
+    <TestPanelShell>
       <div className="grid grid-cols-5 gap-1">
         {drivers.map((n) => (
           <TestBtn
@@ -187,7 +210,7 @@ function TestLoginPanel({ next }: { next: string }) {
           />
         ))}
       </div>
-    </section>
+    </TestPanelShell>
   );
 }
 
