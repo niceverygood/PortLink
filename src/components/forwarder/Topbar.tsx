@@ -1,17 +1,15 @@
-import { Bell } from 'lucide-react';
 import { signOut } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 interface Props {
   title: string;
   subtitle?: string | null;
   /** 우측 상단 액션 (예: "+ 배차 등록" 버튼). 없으면 알림 + 로그아웃만. */
   actions?: React.ReactNode;
-  /** 알림 빨간 점 표시 여부. */
-  hasNotification?: boolean;
 }
 
-export function Topbar({ title, subtitle, actions, hasNotification = false }: Props) {
+export function Topbar({ title, subtitle, actions }: Props) {
   return (
     <header className="flex items-center justify-between border-b border-slate-100 bg-white px-8 py-5">
       <div>
@@ -20,16 +18,7 @@ export function Topbar({ title, subtitle, actions, hasNotification = false }: Pr
       </div>
       <div className="flex items-center gap-3">
         {actions}
-        <button
-          type="button"
-          aria-label="알림"
-          className="relative inline-flex size-9 items-center justify-center rounded-md text-slate-700 hover:bg-slate-50"
-        >
-          <Bell className="size-[18px]" />
-          {hasNotification && (
-            <span className="absolute right-2 top-2 size-2 rounded-full bg-brand-orange" />
-          )}
-        </button>
+        <NotificationBell variant="light" />
         <form
           action={async () => {
             'use server';

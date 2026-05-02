@@ -80,6 +80,21 @@ enum AuditAction {
   PERMISSION
 }
 
+enum NotificationType {
+  DISPATCH_NEW          // 새 배차 등록 (차주 알림)
+  DISPATCH_ACCEPTED     // 차주가 수락 (포워더 알림)
+  TRIP_DEPARTED         // 출발 보고 (포워더 알림)
+  TRIP_LOADED           // 상차 완료 (포워더 알림)
+  TRIP_UNLOADED         // 하차 완료 (포워더 알림)
+  TRIP_COMPLETED        // 운송 완료 (포워더 알림)
+  TRIP_CANCELLED        // 운송 취소
+  SETTLEMENT_READY      // 정산 확정 대기 (양측)
+  SETTLEMENT_PAID       // 정산 지급 완료 (차주 알림)
+  ADMIN_APPROVAL        // 가입 승인 요청 (admin)
+  ANOMALY_DETECTED      // 이상 거래 감지 (admin)
+  SYSTEM                // 시스템 공지
+}
+
 // ─────────────────────────────────────────────
 // Core
 // ─────────────────────────────────────────────
@@ -104,6 +119,7 @@ model User {
   // 1:N
   dispatchOrders DispatchOrder[] @relation("ForwarderOrders")
   auditLogs      AuditLog[]      @relation("ActorAuditLogs")
+  notifications  Notification[]
 
   @@index([role, status])
   @@map("users")
@@ -350,4 +366,28 @@ model AuditLog {
   @@index([actorUserId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// ─────────────────────────────────────────────
+// 인앱 알림
+// ─────────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String           @map("user_id")
+  type      NotificationType
+  title     String
+  body      String?
+  /** 클릭 시 이동할 path (예: "/forwarder/dispatch/abc123"). null이면 단순 안내. */
+  link      String?
+  /** 부가 정보 (orderNo, tripId, amount 등). UI 렌더링은 title/body로 처리. */
+  metadata  Json?
+  readAt    DateTime?        @map("read_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, readAt])
+  @@map("notifications")
 }

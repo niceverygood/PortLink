@@ -22,6 +22,7 @@ import {
   TripStatus,
   SettlementStatus,
   AuditAction,
+  NotificationType,
 } from '@prisma/client';
 import { CONTAINER_TYPE_COEFFICIENT, REGIONS } from '../src/config/regions';
 import { BUSINESS_RULES } from '../src/config/business-rules';
@@ -986,6 +987,148 @@ async function seedAuditLogs(adminUserId: string) {
   return recentOrders.length + 3;
 }
 
+async function seedNotifications(opts: {
+  forwarderUsers: { user: { id: string }; seed: ForwarderSeed }[];
+  drivers: Array<{ user: { id: string }; driver: { id: string }; info: DriverSeed }>;
+  adminUserId: string;
+}) {
+  // 이미 시드 알림 있으면 스킵 (멱등 — id 자동 생성이라 재시도 시 중복 방지)
+  const existing = await prisma.notification.count();
+  if (existing > 0) return existing;
+
+  const now = Date.now();
+  const created: {
+    userId: string;
+    type: NotificationType;
+    title: string;
+    body?: string;
+    link?: string;
+    createdAt: Date;
+  }[] = [];
+
+  // 포워더별 — 최근 차주 수락 / Trip 단계 진행 / 정산 확정 요청 알림 시연용
+  // 각 포워더의 진행중 또는 완료된 배차 가져오기
+  for (const fu of opts.forwarderUsers) {
+    const orders = await prisma.dispatchOrder.findMany({
+      where: { forwarderUserId: fu.user.id },
+      include: { trip: { include: { driver: { include: { user: true } } } } },
+      orderBy: { createdAt: 'desc' },
+      take: 8,
+    });
+    let i = 0;
+    for (const o of orders) {
+      if (!o.trip) continue;
+      const driverName = o.trip.driver.user.name;
+      const link = `/forwarder/dispatch/${o.id}`;
+      // 모든 trip마다 수락 알림 1건
+      created.push({
+        userId: fu.user.id,
+        type: NotificationType.DISPATCH_ACCEPTED,
+        title: `${driverName}님이 배차를 수락했습니다`,
+        body: `${o.orderNo} · ${o.originRegion} → ${o.port}`,
+        link,
+        createdAt: new Date(now - (i * 3 + 5) * HOUR),
+      });
+      // 단계 알림 — IN_TRANSIT/COMPLETED만 추가 트리거
+      if (o.trip.status === TripStatus.LOADED || o.trip.status === TripStatus.UNLOADED) {
+        created.push({
+          userId: fu.user.id,
+          type: NotificationType.TRIP_LOADED,
+          title: `${driverName} · 상차 완료`,
+          body: `${o.orderNo} · ${o.originRegion} → ${o.port}`,
+          link,
+          createdAt: new Date(now - (i * 3 + 2) * HOUR),
+        });
+      }
+      if (o.trip.status === TripStatus.UNLOADED) {
+        created.push({
+          userId: fu.user.id,
+          type: NotificationType.TRIP_UNLOADED,
+          title: `${driverName} · 하차 완료`,
+          body: `${o.orderNo} · 정산 준비 중`,
+          link,
+          createdAt: new Date(now - (i * 3 + 1) * HOUR),
+        });
+      }
+      if (o.trip.status === TripStatus.COMPLETED) {
+        created.push({
+          userId: fu.user.id,
+          type: NotificationType.TRIP_COMPLETED,
+          title: `${driverName} · 운송 완료`,
+          body: `${o.orderNo} · 정산 명세서 확인 필요`,
+          link,
+          createdAt: new Date(now - (i + 1) * HOUR),
+        });
+      }
+      i += 1;
+    }
+  }
+
+  // 차주별 — 본인이 수락한 trip 중 SETTLEMENT_PAID 알림 + DISPATCH_NEW 시연
+  for (const d of opts.drivers) {
+    const settlements = await prisma.settlement.findMany({
+      where: {
+        trip: { driverId: d.driver.id },
+        status: SettlementStatus.PAID,
+      },
+      include: {
+        trip: { include: { dispatchOrder: true } },
+      },
+      take: 3,
+    });
+    settlements.forEach((s, i) => {
+      created.push({
+        userId: d.user.id,
+        type: NotificationType.SETTLEMENT_PAID,
+        title: '정산이 입금되었습니다',
+        body: `${s.trip.dispatchOrder.orderNo} · ${s.driverPayout.toLocaleString('ko-KR')}원`,
+        link: `/driver/settlement`,
+        createdAt: new Date(now - (i * 36 + 20) * HOUR),
+      });
+    });
+    // 새 배차 알림 시연 (D-0001 ~ D-0005만)
+    if (['D-0001', 'D-0002', 'D-0003', 'D-0004', 'D-0005'].includes(d.info.code)) {
+      const openOrder = await prisma.dispatchOrder.findFirst({
+        where: { status: DispatchOrderStatus.OPEN },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (openOrder) {
+        created.push({
+          userId: d.user.id,
+          type: NotificationType.DISPATCH_NEW,
+          title: '신규 배차',
+          body: `${openOrder.originRegion} → ${openOrder.port} · ${openOrder.fare.toLocaleString('ko-KR')}원`,
+          link: `/driver/jobs/${openOrder.id}`,
+          createdAt: new Date(now - 30 * 60 * 1000), // 30분 전
+        });
+      }
+    }
+  }
+
+  // 관리자 — 가입 승인 / 이상 거래 시연
+  created.push({
+    userId: opts.adminUserId,
+    type: NotificationType.ADMIN_APPROVAL,
+    title: '신규 가입 승인 대기',
+    body: '신청자 1명이 승인을 대기 중입니다',
+    link: '/admin/users',
+    createdAt: new Date(now - 2 * HOUR),
+  });
+  created.push({
+    userId: opts.adminUserId,
+    type: NotificationType.ANOMALY_DETECTED,
+    title: '이상 거래 탐지',
+    body: '장기 미수락 배차 2건 감지',
+    link: '/admin/anomaly',
+    createdAt: new Date(now - 6 * HOUR),
+  });
+
+  // 일괄 삽입
+  if (created.length === 0) return 0;
+  await prisma.notification.createMany({ data: created });
+  return created.length;
+}
+
 async function main() {
   console.info('🌱 PortLink seed 시작');
 
@@ -1012,6 +1155,14 @@ async function main() {
   console.info('  감사 로그 시드...');
   const auditCount = await seedAuditLogs(seeded.admin.id);
   console.info(`    ✅ ${auditCount}건`);
+
+  console.info('  알림 시드...');
+  const notiCount = await seedNotifications({
+    forwarderUsers: seeded.forwarderUsers,
+    drivers: seeded.drivers,
+    adminUserId: seeded.admin.id,
+  });
+  console.info(`    ✅ ${notiCount}건`);
 
   console.info('🌱 seed 완료');
 }

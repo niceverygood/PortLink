@@ -23,11 +23,7 @@ export default async function AdminAnomalyPage() {
 
   return (
     <>
-      <Topbar
-        title="이상 거래"
-        subtitle={`4개 룰 적용 결과 — 총 ${totalCount}건 탐지`}
-        hasNotification={totalCount > 0}
-      />
+      <Topbar title="이상 거래" subtitle={`4개 룰 적용 결과 — 총 ${totalCount}건 탐지`} />
       <div className="flex-1 space-y-4 overflow-y-auto p-8">
         <Section
           Icon={Shield}

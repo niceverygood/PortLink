@@ -74,11 +74,7 @@ export default async function AdminDashboardPage() {
 
   return (
     <>
-      <Topbar
-        title="시스템 대시보드"
-        subtitle="실시간 시스템 KPI · 최근 24시간 기준"
-        hasNotification
-      />
+      <Topbar title="시스템 대시보드" subtitle="실시간 시스템 KPI · 최근 24시간 기준" />
       <div className="flex-1 space-y-6 overflow-y-auto p-8">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <KpiCard

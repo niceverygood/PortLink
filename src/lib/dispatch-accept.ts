@@ -1,9 +1,16 @@
 /**
  * 배차 수락 도메인 로직 — API 라우트와 Server Action 양쪽에서 재사용.
  */
-import { AuditAction, DispatchOrderStatus, Prisma, TripStatus } from '@prisma/client';
+import {
+  AuditAction,
+  DispatchOrderStatus,
+  NotificationType,
+  Prisma,
+  TripStatus,
+} from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { err, ok, type Result } from '@/lib/result';
+import { createNotification } from '@/lib/notifications';
 
 export type AcceptError =
   | 'NOT_FOUND'
@@ -63,6 +70,22 @@ export async function acceptDispatchOrder(opts: {
           after: { status: updated.status, assignId: assign.id, tripId: trip.id },
         },
       });
+      // 포워더에게 수락 알림 — 같은 트랜잭션에서 best-effort 생성.
+      const driverUser = await tx.user.findUnique({
+        where: { id: opts.userId },
+        select: { name: true },
+      });
+      await createNotification(
+        {
+          userId: order.forwarderUserId,
+          type: NotificationType.DISPATCH_ACCEPTED,
+          title: `${driverUser?.name ?? '차주'}님이 배차를 수락했습니다`,
+          body: `${order.orderNo} · ${order.originRegion} → ${order.port}`,
+          link: `/forwarder/dispatch/${order.id}`,
+          metadata: { orderId: order.id, orderNo: order.orderNo, tripId: trip.id },
+        },
+        tx,
+      );
       return ok({ orderId: order.id, tripId: trip.id });
     });
   } catch (e) {

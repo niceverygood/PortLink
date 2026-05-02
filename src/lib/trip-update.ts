@@ -1,11 +1,28 @@
 /**
  * Trip 상태 전환 도메인 로직 — API와 Server Action 양쪽에서 재사용.
  */
-import { AuditAction, DispatchOrderStatus, SettlementStatus, TripStatus } from '@prisma/client';
+import {
+  AuditAction,
+  DispatchOrderStatus,
+  NotificationType,
+  SettlementStatus,
+  TripStatus,
+} from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { err, ok, type Result } from '@/lib/result';
 import { canTransitionTripStatus, TRIP_STATUS_TIMESTAMP } from '@/lib/trip-state';
 import { calculateSettlement } from '@/lib/settlements';
+import { createNotification } from '@/lib/notifications';
+
+const TRIP_NOTIFICATION_BY_STATUS: Partial<
+  Record<TripStatus, { type: NotificationType; label: string }>
+> = {
+  [TripStatus.DEPARTED]: { type: NotificationType.TRIP_DEPARTED, label: '출발 보고' },
+  [TripStatus.LOADED]: { type: NotificationType.TRIP_LOADED, label: '상차 완료' },
+  [TripStatus.UNLOADED]: { type: NotificationType.TRIP_UNLOADED, label: '하차 완료' },
+  [TripStatus.COMPLETED]: { type: NotificationType.TRIP_COMPLETED, label: '운송 완료' },
+  [TripStatus.CANCELLED]: { type: NotificationType.TRIP_CANCELLED, label: '운송 취소' },
+};
 
 export type UpdateError =
   | 'NOT_FOUND'
@@ -104,6 +121,27 @@ export async function updateTripStatus(opts: {
         after: { status: updated.status, settlementId },
       },
     });
+
+    // 포워더 알림 — 출발/상차/하차/완료/취소 모두 안내.
+    const tripNoti = TRIP_NOTIFICATION_BY_STATUS[opts.nextStatus];
+    if (tripNoti) {
+      const driverName = trip.driver.user.name;
+      const orderNo = trip.dispatchOrder.orderNo;
+      await createNotification(
+        {
+          userId: trip.dispatchOrder.forwarderUserId,
+          type: tripNoti.type,
+          title: `${driverName} · ${tripNoti.label}`,
+          body:
+            opts.nextStatus === TripStatus.CANCELLED && opts.reason
+              ? `${orderNo} · ${opts.reason}`
+              : `${orderNo} · ${trip.dispatchOrder.originRegion} → ${trip.dispatchOrder.port}`,
+          link: `/forwarder/dispatch/${trip.dispatchOrderId}`,
+          metadata: { tripId: trip.id, orderNo, status: opts.nextStatus },
+        },
+        tx,
+      );
+    }
 
     return { tripId: updated.id, status: updated.status, settlementId };
   });

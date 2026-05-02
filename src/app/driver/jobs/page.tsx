@@ -4,7 +4,7 @@
  */
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Bell } from 'lucide-react';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { DispatchOrderStatus, UserRole } from '@prisma/client';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
@@ -71,7 +71,7 @@ export default async function DriverJobsPage() {
             </span>
             <span className="text-[14px] font-bold tracking-tight">PortLink</span>
           </Link>
-          <Bell className="size-5 text-white" />
+          <NotificationBell variant="dark" />
         </div>
 
         <p className="mb-1 text-[13px] text-white/70">오늘 가능한 배차</p>
