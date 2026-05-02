@@ -2,7 +2,10 @@
 // CLAUDE.md §6 기준. KRW는 정수, snake_case DB 매핑, Asia/Seoul는 application layer.
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // Vercel(AWS Lambda) 환경 — Amazon Linux 2023 + OpenSSL 3
+  // 로컬 macOS arm64는 native가 자동 포함됨.
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
