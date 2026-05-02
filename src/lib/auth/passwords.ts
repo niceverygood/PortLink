@@ -9,10 +9,14 @@
  * CLAUDE.md §11: argon2 (rounds 12+) — argon2id의 timeCost=2 + memory=19MiB는
  * 단일 thread M1 기준 약 50ms 소요.
  */
-import { hash, verify, Algorithm } from '@node-rs/argon2';
+import { hash, verify } from '@node-rs/argon2';
+
+// @node-rs/argon2의 Algorithm은 const enum이라 isolatedModules에서 사용 불가.
+// Argon2d=0, Argon2i=1, Argon2id=2 — argon2id 사용.
+const ARGON2ID = 2 as const;
 
 const OPTIONS = {
-  algorithm: Algorithm.Argon2id,
+  algorithm: ARGON2ID,
   memoryCost: 19 * 1024, // 19 MiB
   timeCost: 2,
   parallelism: 1,
