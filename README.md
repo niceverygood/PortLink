@@ -63,6 +63,29 @@ Next.js 14 · TypeScript strict · Tailwind + shadcn/ui · Prisma 6 · PostgreSQ
 
 색·폰트·문구 규칙은 `CLAUDE.md §1` 참조.
 
+## 환경 변수
+
+| 변수                                                | 로컬                             | 운영 (Vercel)                        |
+| --------------------------------------------------- | -------------------------------- | ------------------------------------ |
+| `DATABASE_URL`                                      | docker postgres `localhost:5433` | Supabase pooler URL                  |
+| `DIRECT_URL`                                        | 위와 동일                        | Supabase Direct URL (마이그레이션용) |
+| `AUTH_SECRET`                                       | `openssl rand -base64 32`        | 동일 (Vercel 대시보드)               |
+| `AUTH_URL`                                          | `http://localhost:3000`          | `https://portlink.kr`                |
+| `NEXT_PUBLIC_APP_URL`                               | `http://localhost:3000`          | `https://portlink.kr`                |
+| `SEED_PASSWORD`                                     | `portlink2026!`                  | **빈 값** (운영에선 시드 미실행)     |
+| `SENTRY_DSN`                                        | 비움                             | Sentry 프로젝트 DSN                  |
+| `NEXT_PUBLIC_SENTRY_DSN`                            | 비움                             | 동일                                 |
+| `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN` | 비움                             | source map 업로드용                  |
+
+## 운영 환경
+
+- 호스팅: Vercel (Production = `main` 브랜치, Preview = PR)
+- DB: Supabase Postgres (pooler + direct connection)
+- 모니터링: Sentry (free tier, tracesSampleRate 0.1)
+- 도메인: `portlink.kr` (가비아 → Vercel A/CNAME)
+
+상세 셋업: `docs/decisions/013-deployment.md`
+
 ## 개발 컨벤션
 
 - 커밋: `[Stage N] <한국어 요약>` 또는 conventional commits (`feat:`, `fix:` ...)

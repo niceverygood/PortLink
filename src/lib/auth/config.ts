@@ -59,6 +59,58 @@ export const authConfig: NextAuthConfig = {
       },
     }),
 
+    /**
+     * 시연 전용 — SEED_PASSWORD가 설정된 환경에서만 동작.
+     * 운영에서 SEED_PASSWORD를 비우면 자동 차단.
+     * kind: 'admin' | 'forwarder' | 'carrier' | 'driver-1' ~ 'driver-5'
+     */
+    Credentials({
+      id: 'test-login',
+      name: 'Test Login (시연 전용)',
+      credentials: {
+        kind: { label: 'kind', type: 'text' },
+      },
+      async authorize(raw) {
+        if (!process.env.SEED_PASSWORD) return null;
+        const kind = typeof raw?.kind === 'string' ? raw.kind : '';
+
+        let phone: string | null = null;
+        if (kind === 'admin') phone = '010-0000-0001';
+        else if (kind === 'forwarder') phone = '010-1000-0001';
+        else if (kind === 'carrier') phone = '010-2000-0001';
+        else if (kind.startsWith('driver-')) {
+          const idx = parseInt(kind.slice(7), 10);
+          if (idx >= 1 && idx <= 5) {
+            phone = `010-3000-${String(idx).padStart(4, '0')}`;
+          }
+        }
+        if (!phone) return null;
+
+        const user = await prisma.user.findUnique({ where: { phone } });
+        if (!user || user.status !== UserStatus.ACTIVE) return null;
+
+        await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+        await prisma.auditLog.create({
+          data: {
+            actorUserId: user.id,
+            entity: 'User',
+            entityId: user.id,
+            action: AuditAction.LOGIN,
+            after: { provider: 'test-login', kind },
+          },
+        });
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          phone: user.phone,
+          role: user.role,
+          status: user.status,
+        };
+      },
+    }),
+
     Credentials({
       id: 'phone-otp',
       name: 'Phone + OTP',

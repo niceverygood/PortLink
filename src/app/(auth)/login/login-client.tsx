@@ -12,7 +12,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 
 type Kind = 'forwarder' | 'driver' | 'admin' | null;
 
-export default function LoginPageClient() {
+interface Props {
+  testLoginEnabled?: boolean;
+}
+
+export default function LoginPageClient({ testLoginEnabled = false }: Props) {
   const router = useRouter();
   const params = useSearchParams();
   const next = params.get('next') ?? '';
@@ -69,8 +73,110 @@ export default function LoginPageClient() {
             </p>
           </TabsContent>
         </Tabs>
+
+        {testLoginEnabled && <TestLoginPanel router={router} next={next} />}
       </div>
     </main>
+  );
+}
+
+interface RouterLike {
+  push: (href: string) => void;
+}
+
+function TestLoginPanel({ router, next }: { router: RouterLike; next: string }) {
+  const [pending, setPending] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function login(kind: string, redirectTo: string) {
+    setPending(kind);
+    setErr(null);
+    try {
+      const res = await signIn('test-login', { kind, redirect: false });
+      if (res?.error) {
+        setErr('테스트 로그인 실패 — 시드가 운영 DB에 적용됐는지 확인하세요');
+        return;
+      }
+      router.push(next || redirectTo);
+    } finally {
+      setPending(null);
+    }
+  }
+
+  const drivers = [1, 2, 3, 4, 5];
+
+  return (
+    <section className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
+      <p className="mb-1 text-caption font-semibold text-amber-700">⚡ 시연용 1-Click 로그인</p>
+      <p className="mb-3 text-caption text-amber-700/80">
+        SEED_PASSWORD가 설정된 환경에서만 노출됩니다 (운영에선 비워서 자동 차단).
+      </p>
+
+      <div className="mb-2 grid grid-cols-3 gap-2">
+        <TestBtn
+          label="관리자"
+          sub="admin@portlink.kr"
+          loading={pending === 'admin'}
+          onClick={() => login('admin', '/admin/dashboard')}
+        />
+        <TestBtn
+          label="포워더"
+          sub="kim@hanjin-demo.kr"
+          loading={pending === 'forwarder'}
+          onClick={() => login('forwarder', '/forwarder/dashboard')}
+        />
+        <TestBtn
+          label="운송사"
+          sub="kim@inhouse-demo.kr"
+          loading={pending === 'carrier'}
+          onClick={() => login('carrier', '/forwarder/dashboard')}
+        />
+      </div>
+
+      <p className="mb-1 text-caption text-amber-700">차주 (모바일 PWA):</p>
+      <div className="grid grid-cols-5 gap-1">
+        {drivers.map((n) => (
+          <TestBtn
+            key={n}
+            label={`D-000${n}`}
+            small
+            loading={pending === `driver-${n}`}
+            onClick={() => login(`driver-${n}`, '/driver/jobs')}
+          />
+        ))}
+      </div>
+
+      {err && <p className="mt-2 text-caption text-brand-error">{err}</p>}
+    </section>
+  );
+}
+
+function TestBtn({
+  label,
+  sub,
+  small,
+  loading,
+  onClick,
+}: {
+  label: string;
+  sub?: string;
+  small?: boolean;
+  loading?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={loading}
+      onClick={onClick}
+      className={
+        'rounded border border-amber-300 bg-white px-2 transition-colors hover:bg-amber-100 disabled:opacity-50 ' +
+        (small ? 'py-1.5 font-mono text-caption' : 'py-2 text-body-sm font-medium')
+      }
+    >
+      {loading ? '…' : label}
+      {sub && <div className="text-[10px] font-normal text-slate-500">{sub}</div>}
+    </button>
   );
 }
 

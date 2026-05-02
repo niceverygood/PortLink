@@ -6,8 +6,11 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Supabase pooler는 prepared statement 미지원 → 마이그레이션은 Direct connection 사용.
+  // 로컬에선 두 값이 동일.
+  directUrl = env("DIRECT_URL")
 }
 
 // ─────────────────────────────────────────────
