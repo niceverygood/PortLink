@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -17,10 +17,10 @@ interface Props {
 }
 
 export default function LoginPageClient({ testLoginEnabled = false }: Props) {
-  const router = useRouter();
   const params = useSearchParams();
   const next = params.get('next') ?? '';
   const kind = (params.get('kind') as Kind) ?? null;
+  const errorCode = params.get('error');
 
   const defaultTab = kind === 'driver' ? 'driver' : 'business';
 
@@ -43,6 +43,14 @@ export default function LoginPageClient({ testLoginEnabled = false }: Props) {
           </Alert>
         )}
 
+        {errorCode && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>
+              로그인 실패 — 이메일/비밀번호 또는 인증번호를 확인하세요.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <Tabs defaultValue={defaultTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="business">담당자 로그인</TabsTrigger>
@@ -50,7 +58,7 @@ export default function LoginPageClient({ testLoginEnabled = false }: Props) {
           </TabsList>
 
           <TabsContent value="business" className="mt-4">
-            <BusinessLoginForm onSuccess={() => router.push(next || '/forwarder/dashboard')} />
+            <BusinessLoginForm callbackUrl={next || '/forwarder/dashboard'} />
             <p className="mt-4 text-center text-body-sm text-slate-500">
               계정이 없으신가요?{' '}
               <Link href="/signup/forwarder" className="text-brand-navy underline">
@@ -64,7 +72,7 @@ export default function LoginPageClient({ testLoginEnabled = false }: Props) {
           </TabsContent>
 
           <TabsContent value="driver" className="mt-4">
-            <DriverLoginForm onSuccess={() => router.push(next || '/driver/jobs')} />
+            <DriverLoginForm callbackUrl={next || '/driver/jobs'} />
             <p className="mt-4 text-center text-body-sm text-slate-500">
               계정이 없으신가요?{' '}
               <Link href="/signup/driver" className="text-brand-orange underline">
@@ -74,33 +82,23 @@ export default function LoginPageClient({ testLoginEnabled = false }: Props) {
           </TabsContent>
         </Tabs>
 
-        {testLoginEnabled && <TestLoginPanel router={router} next={next} />}
+        {testLoginEnabled && <TestLoginPanel next={next} />}
       </div>
     </main>
   );
 }
 
-interface RouterLike {
-  push: (href: string) => void;
-}
-
-function TestLoginPanel({ router, next }: { router: RouterLike; next: string }) {
+function TestLoginPanel({ next }: { next: string }) {
   const [pending, setPending] = useState<string | null>(null);
-  const [err, setErr] = useState<string | null>(null);
 
-  async function login(kind: string, redirectTo: string) {
+  async function login(kind: string, defaultRedirect: string) {
     setPending(kind);
-    setErr(null);
-    try {
-      const res = await signIn('test-login', { kind, redirect: false });
-      if (res?.error) {
-        setErr('테스트 로그인 실패 — 시드가 운영 DB에 적용됐는지 확인하세요');
-        return;
-      }
-      router.push(next || redirectTo);
-    } finally {
-      setPending(null);
-    }
+    // redirect: true (기본) — NextAuth가 atomic하게 cookie 설정 + redirect 처리.
+    // 실패 시 /login?error=...로 돌아옴.
+    await signIn('test-login', {
+      kind,
+      callbackUrl: next || defaultRedirect,
+    });
   }
 
   const drivers = [1, 2, 3, 4, 5];
@@ -145,8 +143,6 @@ function TestLoginPanel({ router, next }: { router: RouterLike; next: string }) 
           />
         ))}
       </div>
-
-      {err && <p className="mt-2 text-caption text-brand-error">{err}</p>}
     </section>
   );
 }
@@ -180,27 +176,16 @@ function TestBtn({
   );
 }
 
-function BusinessLoginForm({ onSuccess }: { onSuccess: () => void }) {
+function BusinessLoginForm({ callbackUrl }: { callbackUrl: string }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
     setLoading(true);
-    const res = await signIn('email-password', {
-      email,
-      password,
-      redirect: false,
-    });
-    setLoading(false);
-    if (res?.error) {
-      setError('이메일 또는 비밀번호가 올바르지 않습니다.');
-      return;
-    }
-    onSuccess();
+    // redirect: true (기본). 실패 시 /login?error=... 로 돌아오면 상위 errorCode로 표시.
+    await signIn('email-password', { email, password, callbackUrl });
   }
 
   return (
@@ -227,11 +212,6 @@ function BusinessLoginForm({ onSuccess }: { onSuccess: () => void }) {
           required
         />
       </div>
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
       <Button
         type="submit"
         disabled={loading}
@@ -243,7 +223,7 @@ function BusinessLoginForm({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
-function DriverLoginForm({ onSuccess }: { onSuccess: () => void }) {
+function DriverLoginForm({ callbackUrl }: { callbackUrl: string }) {
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [step, setStep] = useState<'phone' | 'code'>('phone');
@@ -276,19 +256,8 @@ function DriverLoginForm({ onSuccess }: { onSuccess: () => void }) {
 
   async function verify(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
     setLoading(true);
-    const res = await signIn('phone-otp', {
-      phone,
-      code,
-      redirect: false,
-    });
-    setLoading(false);
-    if (res?.error) {
-      setError('인증번호가 올바르지 않거나 만료되었습니다.');
-      return;
-    }
-    onSuccess();
+    await signIn('phone-otp', { phone, code, callbackUrl });
   }
 
   return (
