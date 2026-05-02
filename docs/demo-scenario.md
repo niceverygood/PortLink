@@ -66,12 +66,12 @@
 
 ## 6. 운영 가시성 (1분)
 
-| 항목                                                  | 보여줄 포인트                                                          |
-| ----------------------------------------------------- | ---------------------------------------------------------------------- |
-| `curl https://port-link-snowy.vercel.app/api/healthz` | `{ ok, db: "up", region: "icn1", ts }` 한 번에 확인                    |
-| Sentry 대시보드 (sentry.io)                           | `/admin/sentry-test?throw=server` 트리거 → 5초 내 issue 도달           |
-| Vercel Analytics                                      | 실시간 RPS / 응답 시간 그래프                                          |
-| k6 부하 테스트 결과                                   | `loadtest/healthz.js` 기준 100 RPS × 5min 통과 (p95 < 500ms, err < 1%) |
+| 항목                                                  | 보여줄 포인트                                                                                                                                         |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `curl https://port-link-snowy.vercel.app/api/healthz` | `{ ok, db: "up", region: "icn1", ts }` 한 번에 확인                                                                                                   |
+| Sentry 대시보드 (sentry.io)                           | `/admin/sentry-test?throw=server` 트리거 → 5초 내 issue 도달                                                                                          |
+| Vercel Analytics                                      | 실시간 RPS / 응답 시간 그래프                                                                                                                         |
+| k6 부하 테스트 결과                                   | `/api/healthz` 100 RPS × 5min: **0% err / p95 49ms** · `/login` 200 RPS × 5min: **0% err / p95 23ms** ([loadtest/RESULTS.md](../loadtest/RESULTS.md)) |
 
 ## 7. 마무리 메시지 (30초)
 
