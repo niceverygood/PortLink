@@ -8,8 +8,8 @@ export const BUSINESS_RULES = {
   PLATFORM_FEE_RATE: 0.05, // 런칭 5%
   LEGAL_MAX_BROKERAGE: 0.1, // 안전운임제 한도 10%
 
-  // 컨테이너
-  CONTAINER_TYPES: ['20FT', '40FT', '40FT_HC'] as const,
+  // 컨테이너 — Stage 8에서 45FT 추가 (안전운임 제19조).
+  CONTAINER_TYPES: ['20FT', '40FT', '40FT_HC', '45FT'] as const,
 
   // 항만
   PORTS: [

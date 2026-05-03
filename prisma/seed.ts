@@ -28,6 +28,7 @@ import { CONTAINER_TYPE_COEFFICIENT, REGIONS } from '../src/config/regions';
 import { BUSINESS_RULES } from '../src/config/business-rules';
 import { CONTAINER_TYPE_TO_WIRE } from '../src/lib/prisma-enums';
 import { hashPassword } from '../src/lib/auth/passwords';
+import { seedSafeFreight2026 } from './seeds/safe-freight-seeder';
 
 const prisma = new PrismaClient();
 
@@ -1132,9 +1133,15 @@ async function seedNotifications(opts: {
 async function main() {
   console.info('🌱 PortLink seed 시작');
 
-  console.info('  안전운임 마스터 시드...');
+  console.info('  안전운임 마스터 (Stage 1, deprecated) 시드...');
   const safeRateCount = await seedSafeRates();
   console.info(`    ✅ ${safeRateCount}건`);
+
+  console.info('  안전운임 v2 (거리 기반, 연도별 스냅샷) 시드...');
+  const sf = await seedSafeFreight2026(prisma);
+  console.info(
+    `    ✅ FY${sf.fiscalYear} · 운임 row ${sf.rateRows} · 할증 ${sf.surchargeRules} · 배후단지 ${sf.hinterlandRows} (참조용)`,
+  );
 
   console.info('  사용자 + 프로필 + 차량 시드...');
   const seeded = await seedUsersAndProfiles();
