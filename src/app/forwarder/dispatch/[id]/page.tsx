@@ -41,6 +41,7 @@ export default async function DispatchDetailPage({ params }: { params: Promise<{
           driver: { include: { user: true, vehicles: true } },
           settlement: true,
           locationStamps: { orderBy: { capturedAt: 'asc' } },
+          emptyRunCharge: true,
         },
       },
       assigns: { include: { driver: { include: { user: true } } } },
@@ -259,6 +260,25 @@ export default async function DispatchDetailPage({ params }: { params: Promise<{
               <KV label="차주 수령" value={formatKRW(trip.settlement.driverPayout)} />
             </div>
             <div className="mt-2 text-caption text-slate-500">상태: {trip.settlement.status}</div>
+          </section>
+        )}
+
+        {trip?.emptyRunCharge && (
+          <section className="rounded-lg border-2 border-emerald-300 bg-emerald-50/60 p-5">
+            <h2 className="mb-2 text-body font-semibold text-emerald-900">
+              ⚡ 공차 운행 보상 청구 (§14)
+            </h2>
+            <p className="text-[12.5px] text-emerald-800">
+              차주가 직전 운송지에서{' '}
+              <span className="font-bold tabular-nums">
+                {Number(trip.emptyRunCharge.distanceKm).toFixed(1)}km
+              </span>{' '}
+              공차 이동했습니다. 안전운임 제14조에 따라{' '}
+              <span className="font-bold tabular-nums">
+                {formatKRW(trip.emptyRunCharge.chargeKrw)}
+              </span>
+              의 보상을 청구할 수 있습니다.
+            </p>
           </section>
         )}
 

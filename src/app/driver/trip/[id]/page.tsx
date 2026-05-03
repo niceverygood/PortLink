@@ -39,6 +39,7 @@ export default async function DriverTripDetailPage({
     include: {
       dispatchOrder: { include: { forwarder: { include: { forwarder: true } } } },
       driver: { include: { user: true } },
+      emptyRunCharge: true,
     },
   });
   if (!trip) notFound();
@@ -82,6 +83,29 @@ export default async function DriverTripDetailPage({
         </div>
         <PriceDisplay amount={trip.dispatchOrder.fare} size="lg" tone="navy" />
       </section>
+
+      {trip.emptyRunCharge && (
+        <section className="mb-4 rounded-3xl border-2 border-emerald-300 bg-emerald-50/60 p-4">
+          <div className="mb-1 flex items-center gap-1.5">
+            <span className="text-[10px] font-bold uppercase text-emerald-700">
+              ⚡ 공차 운행 §14
+            </span>
+          </div>
+          <p className="text-[13px] font-semibold text-emerald-900">
+            직전 운송지에서 {Number(trip.emptyRunCharge.distanceKm).toFixed(1)}km 공차 이동 감지
+          </p>
+          <p className="mt-1 text-[12px] text-emerald-800">
+            보상 청구 가능액{' '}
+            <span className="text-[16px] font-black tabular-nums">
+              {trip.emptyRunCharge.chargeKrw.toLocaleString('ko-KR')}원
+            </span>{' '}
+            (안전위탁운임 50%)
+          </p>
+          <p className="mt-1 text-[10px] text-emerald-700/80">
+            안전운임 제14조 — 화주 또는 운수사가 지급. 운송 완료 후 정산에 반영 예정.
+          </p>
+        </section>
+      )}
 
       <section className="mb-4 space-y-3 rounded-3xl bg-white p-5 shadow-sm">
         <div className="flex items-start gap-3">

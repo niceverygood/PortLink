@@ -11,6 +11,7 @@ import {
 import { prisma } from '@/lib/db';
 import { err, ok, type Result } from '@/lib/result';
 import { createNotification } from '@/lib/notifications';
+import { detectAndRecordEmptyRun } from '@/lib/empty-run';
 
 export type AcceptError =
   | 'NOT_FOUND'
@@ -93,5 +94,37 @@ export async function acceptDispatchOrder(opts: {
       return err('ALREADY_ACCEPTED');
     }
     throw e;
+  } finally {
+    // 트랜잭션 외부에서 best-effort 공차 운행 감지 — 실패해도 수락 자체엔 영향 X.
+    // (driver, order는 위 트랜잭션이 성공해야만 valid 상태)
+    if (driver) {
+      void detectAndRecordEmptyRunBestEffort({
+        driverId: driver.id,
+        orderId: opts.orderId,
+      });
+    }
+  }
+}
+
+/** 트랜잭션 외부 best-effort. order 정보를 한 번 더 fetch (트랜잭션 결과를 반환받지 않으므로).
+ * 어떤 실패도 호출자에게 throw하지 않음. */
+async function detectAndRecordEmptyRunBestEffort(opts: {
+  driverId: string;
+  orderId: string;
+}): Promise<void> {
+  try {
+    const trip = await prisma.trip.findUnique({
+      where: { dispatchOrderId: opts.orderId },
+      include: { dispatchOrder: { select: { originRegion: true, containerType: true } } },
+    });
+    if (!trip) return;
+    await detectAndRecordEmptyRun({
+      driverId: opts.driverId,
+      newTripId: trip.id,
+      newDispatchOrderOriginRegion: trip.dispatchOrder.originRegion,
+      newContainerType: trip.dispatchOrder.containerType,
+    });
+  } catch (e) {
+    console.error('[empty-run] detect failed', e);
   }
 }
