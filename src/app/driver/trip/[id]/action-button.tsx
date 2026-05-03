@@ -1,8 +1,9 @@
 'use client';
 
-import { useTransition, useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import type { TripStatus } from '@prisma/client';
+import { captureLocationOnce } from '@/lib/geolocation';
 import { updateTripStatusAction } from '../actions';
 
 export function TripActionButton({
@@ -17,6 +18,7 @@ export function TripActionButton({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [err, setErr] = useState<string | null>(null);
+  const [capturing, setCapturing] = useState(false);
 
   return (
     <div>
@@ -27,22 +29,30 @@ export function TripActionButton({
       )}
       <button
         type="button"
-        disabled={pending}
-        onClick={() =>
-          startTransition(async () => {
-            setErr(null);
-            const res = await updateTripStatusAction({ tripId, nextStatus });
-            if (!res.ok) {
-              setErr(res.message ?? '상태 변경 실패');
-              return;
-            }
-            router.refresh();
-          })
-        }
+        disabled={pending || capturing}
+        onClick={() => {
+          setCapturing(true);
+          // 위치 capture는 best-effort — 거부/타임아웃이어도 액션은 진행.
+          void captureLocationOnce().then((location) => {
+            setCapturing(false);
+            startTransition(async () => {
+              setErr(null);
+              const res = await updateTripStatusAction({ tripId, nextStatus, location });
+              if (!res.ok) {
+                setErr(res.message ?? '상태 변경 실패');
+                return;
+              }
+              router.refresh();
+            });
+          });
+        }}
         className="w-full rounded-3xl bg-brand-orange py-4 text-h2 font-semibold text-white shadow-md transition-colors hover:bg-brand-orange-dark disabled:opacity-60"
       >
-        {pending ? '처리 중…' : label}
+        {capturing ? '위치 확인 중…' : pending ? '처리 중…' : label}
       </button>
+      <p className="mt-1 text-center text-[10.5px] text-slate-400">
+        위치는 액션 시점 1회만 기록 (백그라운드 추적 X)
+      </p>
     </div>
   );
 }

@@ -36,6 +36,19 @@ export interface OtpAbuseItem {
   since: Date;
 }
 
+export interface SuspiciousLocationItem {
+  tripId: string;
+  orderNo: string;
+  driverCode: string;
+  driverName: string;
+  loadedLat: number;
+  loadedLng: number;
+  unloadedLat: number;
+  unloadedLng: number;
+  distanceM: number;
+  capturedAt: Date;
+}
+
 export interface DuplicateAddressItem {
   originAddress: string;
   count: number;
@@ -176,20 +189,86 @@ export async function findDuplicateAddress(threshold = 5): Promise<DuplicateAddr
     .slice(0, MAX_RESULTS);
 }
 
-/** 4 룰 일괄 실행. 대시보드/리스트 페이지에서 사용. */
+/** Rule 5 — 위치 스탬프 의심:
+ * LOADED 좌표와 UNLOADED 좌표가 1km 이내 → 실제 운송 안 했을 가능성.
+ * 두 스탬프 모두 있는 trip만 대상. */
+export async function findSuspiciousLocation(thresholdM = 1000): Promise<SuspiciousLocationItem[]> {
+  // 두 스탬프가 모두 있는 trip 조회 → JS에서 거리 계산 (Haversine).
+  // PostgreSQL PostGIS가 없으므로 메모리에서 처리. trip 수 ~100 단위라 OK.
+  const trips = await prisma.trip.findMany({
+    where: {
+      locationStamps: {
+        some: { action: 'LOADED' },
+      },
+      AND: { locationStamps: { some: { action: 'UNLOADED' } } },
+    },
+    include: {
+      locationStamps: { where: { action: { in: ['LOADED', 'UNLOADED'] } } },
+      driver: { include: { user: true } },
+      dispatchOrder: { select: { orderNo: true } },
+    },
+    take: 200,
+    orderBy: { updatedAt: 'desc' },
+  });
+
+  const result: SuspiciousLocationItem[] = [];
+  for (const t of trips) {
+    const loaded = t.locationStamps.find((s) => s.action === 'LOADED');
+    const unloaded = t.locationStamps.find((s) => s.action === 'UNLOADED');
+    if (!loaded || !unloaded) continue;
+    const lat1 = Number(loaded.latitude);
+    const lng1 = Number(loaded.longitude);
+    const lat2 = Number(unloaded.latitude);
+    const lng2 = Number(unloaded.longitude);
+    const distanceM = haversineMeters(lat1, lng1, lat2, lng2);
+    if (distanceM <= thresholdM) {
+      result.push({
+        tripId: t.id,
+        orderNo: t.dispatchOrder.orderNo,
+        driverCode: t.driver.driverCode,
+        driverName: t.driver.user.name,
+        loadedLat: lat1,
+        loadedLng: lng1,
+        unloadedLat: lat2,
+        unloadedLng: lng2,
+        distanceM: Math.round(distanceM),
+        capturedAt: unloaded.capturedAt,
+      });
+      if (result.length >= MAX_RESULTS) break;
+    }
+  }
+  return result;
+}
+
+/** Haversine — 두 위경도 간 직선 거리 (meter). */
+function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6_371_000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+/** 5 룰 일괄 실행. 대시보드/리스트 페이지에서 사용. */
 export async function runAllAnomalyRules(): Promise<{
   fareViolations: FareViolationItem[];
   driverCancels: DriverCancelItem[];
   otpAbuse: OtpAbuseItem[];
   duplicateAddress: DuplicateAddressItem[];
+  suspiciousLocations: SuspiciousLocationItem[];
 }> {
-  const [fareViolations, driverCancels, otpAbuse, duplicateAddress] = await Promise.all([
-    findFareViolations(),
-    findDriverCancelAbuse(),
-    findOtpAbuse(),
-    findDuplicateAddress(),
-  ]);
-  return { fareViolations, driverCancels, otpAbuse, duplicateAddress };
+  const [fareViolations, driverCancels, otpAbuse, duplicateAddress, suspiciousLocations] =
+    await Promise.all([
+      findFareViolations(),
+      findDriverCancelAbuse(),
+      findOtpAbuse(),
+      findDuplicateAddress(),
+      findSuspiciousLocation(),
+    ]);
+  return { fareViolations, driverCancels, otpAbuse, duplicateAddress, suspiciousLocations };
 }
 
 // Prisma 사용으로 import 경고 회피

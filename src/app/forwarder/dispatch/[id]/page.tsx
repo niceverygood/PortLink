@@ -40,6 +40,7 @@ export default async function DispatchDetailPage({ params }: { params: Promise<{
         include: {
           driver: { include: { user: true, vehicles: true } },
           settlement: true,
+          locationStamps: { orderBy: { capturedAt: 'asc' } },
         },
       },
       assigns: { include: { driver: { include: { user: true } } } },
@@ -212,6 +213,32 @@ export default async function DispatchDetailPage({ params }: { params: Promise<{
                 <div className="border-t pt-3">
                   <TimelineStepper current={trip.status} />
                 </div>
+                {trip.locationStamps.length > 0 && (
+                  <div className="border-t pt-3">
+                    <p className="mb-2 text-caption font-semibold text-slate-700">위치 스탬프</p>
+                    <ul className="space-y-1.5 text-[11.5px]">
+                      {trip.locationStamps.map((s) => {
+                        const lat = Number(s.latitude).toFixed(5);
+                        const lng = Number(s.longitude).toFixed(5);
+                        const acc = s.accuracyM ? `±${Math.round(Number(s.accuracyM))}m` : '—';
+                        return (
+                          <li key={s.id} className="flex items-center justify-between gap-2">
+                            <span className="font-mono text-slate-500">{s.action}</span>
+                            <a
+                              href={`https://map.naver.com/v5/?lng=${lng}&lat=${lat}&zoom=14&type=0`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-mono tabular-nums text-brand-orange underline"
+                            >
+                              {lat}, {lng}
+                            </a>
+                            <span className="tabular-nums text-slate-400">{acc}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
 

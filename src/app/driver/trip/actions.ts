@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { UserRole, type TripStatus } from '@prisma/client';
 import { auth } from '@/lib/auth';
-import { updateTripStatus, type UpdateError } from '@/lib/trip-update';
+import { updateTripStatus, type LocationStampInput, type UpdateError } from '@/lib/trip-update';
 
 const ERROR_MESSAGE: Record<UpdateError, string> = {
   NOT_FOUND: 'Trip을 찾을 수 없습니다',
@@ -16,6 +16,7 @@ const ERROR_MESSAGE: Record<UpdateError, string> = {
 export async function updateTripStatusAction(opts: {
   tripId: string;
   nextStatus: TripStatus;
+  location?: LocationStampInput | null;
 }): Promise<{ ok: boolean; message?: string }> {
   const session = await auth();
   if (!session?.user?.id) return { ok: false, message: '로그인이 필요합니다' };
@@ -25,6 +26,7 @@ export async function updateTripStatusAction(opts: {
     isAdmin: session.user.role === UserRole.ADMIN,
     tripId: opts.tripId,
     nextStatus: opts.nextStatus,
+    location: opts.location ?? null,
   });
 
   if (!result.ok) return { ok: false, message: ERROR_MESSAGE[result.error] };

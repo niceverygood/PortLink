@@ -4,7 +4,7 @@
  */
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { MapPin, Shield, Smartphone, UserMinus, type LucideIcon } from 'lucide-react';
+import { MapPin, Navigation, Shield, Smartphone, UserMinus, type LucideIcon } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { Topbar } from '@/components/forwarder/Topbar';
 import { runAllAnomalyRules } from '@/lib/anomaly';
@@ -17,13 +17,18 @@ export default async function AdminAnomalyPage() {
   const session = await auth();
   if (!session?.user?.id) redirect('/login?kind=admin');
 
-  const { fareViolations, driverCancels, otpAbuse, duplicateAddress } = await runAllAnomalyRules();
+  const { fareViolations, driverCancels, otpAbuse, duplicateAddress, suspiciousLocations } =
+    await runAllAnomalyRules();
   const totalCount =
-    fareViolations.length + driverCancels.length + otpAbuse.length + duplicateAddress.length;
+    fareViolations.length +
+    driverCancels.length +
+    otpAbuse.length +
+    duplicateAddress.length +
+    suspiciousLocations.length;
 
   return (
     <>
-      <Topbar title="이상 거래" subtitle={`4개 룰 적용 결과 — 총 ${totalCount}건 탐지`} />
+      <Topbar title="이상 거래" subtitle={`5개 룰 적용 결과 — 총 ${totalCount}건 탐지`} />
       <div className="flex-1 space-y-4 overflow-y-auto p-8">
         <Section
           Icon={Shield}
@@ -128,6 +133,33 @@ export default async function AdminAnomalyPage() {
                   <span className="tabular-nums text-brand-warning">
                     {d.count}건 · 포워더 {d.forwarderUserIds.length}명
                   </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Section>
+
+        <Section
+          Icon={Navigation}
+          title="LOADED ↔ UNLOADED 좌표 1km 이내"
+          subtitle="실제 운송 안 했을 가능성 (위치 스탬프 기반)"
+          count={suspiciousLocations.length}
+          accent="error"
+        >
+          {suspiciousLocations.length === 0 ? (
+            <Empty />
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {suspiciousLocations.map((s) => (
+                <li
+                  key={s.tripId}
+                  className="flex items-center justify-between px-4 py-2 text-[12px]"
+                >
+                  <span className="font-mono text-slate-700">#{s.orderNo}</span>
+                  <span>
+                    {s.driverCode} · {s.driverName}
+                  </span>
+                  <span className="tabular-nums text-brand-error">{s.distanceM}m</span>
                 </li>
               ))}
             </ul>
