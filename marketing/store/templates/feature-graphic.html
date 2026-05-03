@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="./_shared.css" />
+    <style>
+      html,
+      body {
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+      }
+      .canvas {
+        width: 100vw;
+        height: 100vh;
+        background: linear-gradient(120deg, #0a2540 0%, #061b2e 60%, #0a2540 100%);
+        display: flex;
+        align-items: center;
+        padding: 0 6vw;
+        position: relative;
+        overflow: hidden;
+      }
+      .canvas::before {
+        content: '';
+        position: absolute;
+        right: -10vw;
+        top: -20vh;
+        width: 50vw;
+        height: 100vh;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle at center,
+          rgba(255, 107, 53, 0.25) 0%,
+          transparent 70%
+        );
+      }
+      .text-block {
+        flex: 1;
+        position: relative;
+        z-index: 2;
+      }
+      .pill {
+        display: inline-block;
+        padding: 1.2vh 2.8vw;
+        border-radius: 999px;
+        background: rgba(255, 107, 53, 0.2);
+        color: var(--orange-light);
+        font-size: 2.6vh;
+        font-weight: 700;
+        margin-bottom: 3.6vh;
+        letter-spacing: 0.02em;
+      }
+      .headline {
+        font-size: 11.2vh;
+        font-weight: 900;
+        color: var(--white);
+        letter-spacing: -0.04em;
+        line-height: 1.05;
+        margin-bottom: 3.2vh;
+      }
+      .headline span {
+        color: var(--orange);
+      }
+      .sub {
+        font-size: 3.4vh;
+        color: rgba(255, 255, 255, 0.75);
+        line-height: 1.5;
+        max-width: 46vw;
+        margin-bottom: 4.8vh;
+      }
+      .badges {
+        display: flex;
+        gap: 1.5vw;
+      }
+      .badge {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 1.2vh 2.4vw;
+        border-radius: 1.6vh;
+        color: var(--white);
+        font-size: 2.4vh;
+        font-weight: 600;
+      }
+      .phones {
+        position: relative;
+        width: 38vw;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .mini-phone {
+        position: absolute;
+        width: 16vw;
+        height: 64vh;
+        background: var(--white);
+        border-radius: 4vh;
+        box-shadow:
+          0 4vh 12vh rgba(0, 0, 0, 0.4),
+          0 0 0 0.8vh #1f2937;
+        overflow: hidden;
+      }
+      .mini-phone .h {
+        height: 16vh;
+        background: var(--navy);
+        padding: 3.2vh 2.4vh 0;
+      }
+      .mini-phone .h .label {
+        font-size: 1.6vh;
+        color: rgba(255, 255, 255, 0.6);
+        margin-bottom: 0.8vh;
+      }
+      .mini-phone .h .num {
+        font-size: 5.6vh;
+        font-weight: 900;
+        color: var(--white);
+        letter-spacing: -0.04em;
+      }
+      .mini-phone .body {
+        padding: 2.4vh;
+        display: flex;
+        flex-direction: column;
+        gap: 1.6vh;
+      }
+      .mini-phone .row {
+        background: var(--slate-50);
+        padding: 1.6vh;
+        border-radius: 1.6vh;
+        font-size: 1.8vh;
+      }
+      .mini-phone .row strong {
+        color: var(--navy);
+      }
+      .mini-phone .cta {
+        background: var(--orange);
+        color: var(--white);
+        padding: 1.6vh;
+        border-radius: 2vh;
+        text-align: center;
+        font-size: 1.8vh;
+        font-weight: 700;
+      }
+
+      .p1 {
+        transform: translateX(-11vw) rotate(-8deg);
+        z-index: 2;
+      }
+      .p2 {
+        transform: translateY(-2vh);
+        z-index: 3;
+      }
+      .p3 {
+        transform: translateX(11vw) rotate(8deg);
+        z-index: 2;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="canvas" id="capture">
+      <div class="text-block">
+        <span class="pill">⚡ 컨테이너 차주 전용</span>
+        <h1 class="headline">
+          빈 차로<br />
+          돌아가지 <span>마세요</span>
+        </h1>
+        <p class="sub">
+          안전운임 §14 자동 안내 · 백홀 매칭 추천 · 공차 거리 0km 도전.<br />
+          차주님 수입을 지키는 가장 빠른 방법.
+        </p>
+        <div class="badges">
+          <span class="badge">안전운임 자동 검증</span>
+          <span class="badge">신고서 1-Click PDF</span>
+          <span class="badge">광고비 정렬 X</span>
+        </div>
+      </div>
+      <div class="phones">
+        <div class="mini-phone p1">
+          <div class="h">
+            <div class="label">오늘 가능한 배차</div>
+            <div class="num">6건</div>
+          </div>
+          <div class="body">
+            <div class="row"><strong>이천 → 부산항</strong><br />75만원</div>
+            <div class="row"><strong>평택 → 부산신항</strong><br />75만원</div>
+            <div class="cta">지금 수락</div>
+          </div>
+        </div>
+        <div class="mini-phone p2">
+          <div
+            class="h"
+            style="background: linear-gradient(135deg, #047857 0%, #065f46 100%)"
+          >
+            <div class="label">법정 최저 안전위탁운임</div>
+            <div class="num">98만원</div>
+          </div>
+          <div class="body">
+            <div class="row" style="background: #fee2e2; color: #be123c">
+              ⚠️ 약정 부족 13만원
+            </div>
+            <div class="cta" style="background: #be123c">신고서 양식</div>
+          </div>
+        </div>
+        <div class="mini-phone p3">
+          <div class="h">
+            <div class="label">§14 공차 보상 안내</div>
+            <div class="num">28km</div>
+          </div>
+          <div class="body">
+            <div class="row" style="background: #d1fae5">
+              <strong style="color: #047857">청구 가능액</strong><br />215,000원
+            </div>
+            <div class="cta" style="background: #047857">양식 다운로드</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

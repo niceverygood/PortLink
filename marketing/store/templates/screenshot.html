@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="./_shared.css" />
+    <style>
+      /* 1080x1920 (Google) / 1290x2796 (Apple). 둘 다 9:16 근사. CSS는 vh/vw 기반 */
+      .canvas {
+        width: 100vw;
+        height: 100vh;
+        background: linear-gradient(180deg, #0a2540 0%, #061b2e 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 6vh 5vw 4vh;
+      }
+      .header {
+        text-align: center;
+        max-width: 90vw;
+        margin-bottom: 4vh;
+      }
+      .pill {
+        display: inline-block;
+        padding: 0.7vh 1.6vw;
+        border-radius: 999px;
+        background: rgba(255, 107, 53, 0.2);
+        color: var(--orange-light);
+        font-size: 1.6vh;
+        font-weight: 700;
+        margin-bottom: 1.6vh;
+      }
+      .headline {
+        font-size: 5.2vh;
+        font-weight: 900;
+        color: var(--white);
+        letter-spacing: -0.04em;
+        line-height: 1.1;
+      }
+      .headline span {
+        color: var(--orange);
+      }
+      .subline {
+        margin-top: 1.4vh;
+        font-size: 2vh;
+        color: rgba(255, 255, 255, 0.7);
+        font-weight: 500;
+      }
+      .phone-wrap {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+      .phone-frame {
+        width: 78vw;
+        height: 75vh;
+        max-width: 460px;
+      }
+      .phone-status-bar {
+        font-size: 1.4vh;
+      }
+      /* 차주 PWA 화면 미니 재현 */
+      .driver-hero {
+        background: var(--navy);
+        padding: 2.4vh 4vw 3vh;
+        color: var(--white);
+      }
+      .driver-hero .brand-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2vh;
+        font-size: 1.6vh;
+      }
+      .driver-hero .label {
+        font-size: 1.5vh;
+        opacity: 0.7;
+      }
+      .driver-hero .big-num {
+        font-size: 4.2vh;
+        font-weight: 900;
+        letter-spacing: -0.04em;
+        margin-top: 0.4vh;
+      }
+      .driver-stats {
+        display: flex;
+        gap: 1.6vw;
+        margin-top: 2vh;
+      }
+      .stat {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 1.2vh 2vw;
+        border-radius: 10px;
+      }
+      .stat .k {
+        font-size: 1.2vh;
+        opacity: 0.6;
+      }
+      .stat .v {
+        font-size: 2vh;
+        font-weight: 800;
+        margin-top: 0.4vh;
+      }
+      .stat.urgent {
+        background: rgba(255, 107, 53, 0.2);
+        border: 1px solid var(--orange);
+      }
+      .stat.urgent .v {
+        color: var(--orange);
+      }
+      .driver-body {
+        padding: 2vh 4vw;
+        display: flex;
+        flex-direction: column;
+        gap: 1.4vh;
+        background: var(--slate-50);
+        flex: 1;
+      }
+      .card {
+        background: var(--white);
+        border-radius: 16px;
+        padding: 2vh 3vw;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      }
+      .card-urgent {
+        border: 2px solid var(--orange);
+      }
+      .card-warn {
+        background: rgba(254, 226, 226, 0.6);
+        border: 2px solid var(--rose);
+      }
+      .card-success {
+        background: rgba(209, 250, 229, 0.6);
+        border: 2px solid var(--emerald);
+      }
+      .card-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .card-label {
+        font-size: 1.4vh;
+        color: var(--slate-500);
+        font-weight: 600;
+      }
+      .card-value {
+        font-size: 2.6vh;
+        font-weight: 900;
+        color: var(--navy);
+        letter-spacing: -0.03em;
+      }
+      .badge-warn {
+        background: var(--rose-light);
+        color: var(--rose);
+        padding: 0.3vh 1vw;
+        border-radius: 4px;
+        font-size: 1.1vh;
+        font-weight: 700;
+      }
+      .badge-success {
+        background: var(--emerald-light);
+        color: var(--emerald);
+        padding: 0.3vh 1vw;
+        border-radius: 4px;
+        font-size: 1.1vh;
+        font-weight: 700;
+      }
+      .route-box {
+        display: flex;
+        gap: 1.5vw;
+        align-items: center;
+        background: var(--slate-100);
+        padding: 1.4vh 2vw;
+        border-radius: 12px;
+        margin-top: 1vh;
+      }
+      .route-box .place {
+        flex: 1;
+        text-align: center;
+      }
+      .route-box .place .l {
+        font-size: 1.1vh;
+        color: var(--slate-500);
+      }
+      .route-box .place .n {
+        font-size: 2vh;
+        font-weight: 800;
+        color: var(--navy);
+      }
+      .route-box .arrow {
+        color: var(--orange);
+        font-size: 2vh;
+      }
+      .cta-button {
+        background: var(--orange);
+        color: var(--white);
+        padding: 2vh;
+        border-radius: 16px;
+        text-align: center;
+        font-size: 2vh;
+        font-weight: 800;
+        margin-top: 1vh;
+      }
+      .timeline {
+        display: flex;
+        gap: 0.8vw;
+        align-items: center;
+        margin-top: 0.5vh;
+      }
+      .timeline .step {
+        flex: 1;
+        height: 0.8vh;
+        background: var(--slate-300);
+        border-radius: 4px;
+      }
+      .timeline .step.done {
+        background: var(--emerald);
+      }
+      .timeline .step.active {
+        background: var(--orange);
+      }
+      .footer-tag {
+        text-align: center;
+        margin-top: 3vh;
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 1.4vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="canvas" id="capture">
+      <!-- 동적 콘텐츠는 generate.ts가 query param 또는 textContent 치환 -->
+      <div class="header">
+        <span class="pill" id="pill">⚡ 컨테이너 차주 전용</span>
+        <h1 class="headline" id="headline">빈 차로<br /><span>돌아가지 마세요</span></h1>
+        <p class="subline" id="subline">한 번에 알려드립니다</p>
+      </div>
+      <div class="phone-wrap">
+        <div class="phone-frame">
+          <div class="phone-notch"></div>
+          <div class="phone-status-bar">
+            <span>9:41</span>
+            <span>•••</span>
+            <span class="tabular">100%</span>
+          </div>
+          <div id="screen"><!-- generate.ts가 채움 --></div>
+        </div>
+      </div>
+      <p class="footer-tag">PortLink Driver</p>
+    </div>
+    <script>
+      // generate.ts가 호출. 페이지에 콘텐츠 주입.
+      window.__setContent = function (cfg) {
+        if (cfg.pill) document.getElementById('pill').textContent = cfg.pill;
+        if (cfg.headline) document.getElementById('headline').innerHTML = cfg.headline;
+        if (cfg.subline) document.getElementById('subline').textContent = cfg.subline;
+        document.getElementById('screen').innerHTML = cfg.screenHtml;
+      };
+    </script>
+  </body>
+</html>

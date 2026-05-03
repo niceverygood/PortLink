@@ -1,0 +1,86 @@
+/* PortLink Driver — 스토어 자산 공통 디자인 토큰. CLAUDE.md §3, §4 준수. */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family:
+    'Pretendard',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+}
+
+:root {
+  --navy: #0a2540;
+  --navy-dark: #061b2e;
+  --orange: #ff6b35;
+  --orange-dark: #e55a2b;
+  --orange-light: #ff8c61;
+  --emerald: #047857;
+  --emerald-light: #d1fae5;
+  --rose: #be123c;
+  --rose-light: #fee2e2;
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-300: #cbd5e1;
+  --slate-500: #64748b;
+  --slate-700: #334155;
+  --slate-900: #0f172a;
+  --white: #ffffff;
+}
+
+body {
+  background: var(--slate-50);
+  color: var(--slate-900);
+}
+
+/* 모든 템플릿이 정확한 크기로 렌더되도록 root container를 px 고정 */
+.canvas {
+  position: relative;
+  overflow: hidden;
+  background: var(--slate-50);
+}
+
+/* 폰 프레임 — 스크린샷 안에 들어가는 모바일 화면 mock */
+.phone-frame {
+  background: var(--white);
+  border-radius: 36px;
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.4),
+    0 0 0 8px #1f2937;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.phone-notch {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30%;
+  height: 24px;
+  background: #1f2937;
+  border-radius: 0 0 16px 16px;
+  z-index: 10;
+}
+
+.phone-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 24px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--navy);
+  background: var(--white);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}

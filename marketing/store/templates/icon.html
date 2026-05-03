@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="./_shared.css" />
+    <style>
+      html,
+      body {
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+      }
+      .canvas {
+        width: 100vw;
+        height: 100vh;
+        background: linear-gradient(135deg, #0a2540 0%, #061b2e 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .icon {
+        width: 78vmin;
+        height: 78vmin;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3vmin;
+      }
+      .truck-circle {
+        width: 36vmin;
+        height: 36vmin;
+        border-radius: 50%;
+        background: var(--orange);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2vmin 8vmin rgba(255, 107, 53, 0.5);
+        position: relative;
+      }
+      .truck-circle::before {
+        content: '';
+        position: absolute;
+        inset: -1.6vmin;
+        border-radius: 50%;
+        border: 0.4vmin solid rgba(255, 255, 255, 0.15);
+      }
+      .container-icon {
+        width: 20vmin;
+        height: 20vmin;
+        color: var(--white);
+      }
+      .wordmark {
+        font-size: 8.4vmin;
+        font-weight: 900;
+        color: var(--white);
+        letter-spacing: -0.04em;
+        font-family: 'Pretendard', sans-serif;
+        line-height: 1;
+      }
+      .wordmark-sub {
+        font-size: 3.6vmin;
+        font-weight: 600;
+        color: var(--orange-light);
+        margin-top: 0.4vmin;
+        letter-spacing: 0.02em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="canvas" id="capture">
+      <div class="icon">
+        <div class="truck-circle">
+          <svg
+            class="container-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="white"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="2" y="6" width="13" height="10" rx="0.5" fill="white" stroke="none" />
+            <line x1="5" y1="6" x2="5" y2="16" stroke="#FF6B35" stroke-width="0.5" />
+            <line x1="8" y1="6" x2="8" y2="16" stroke="#FF6B35" stroke-width="0.5" />
+            <line x1="11" y1="6" x2="11" y2="16" stroke="#FF6B35" stroke-width="0.5" />
+            <path d="M15 9h4l2 3v4h-6V9z" fill="white" stroke="none" />
+            <circle cx="6" cy="18" r="2" fill="#0A2540" stroke="white" stroke-width="0.8" />
+            <circle cx="17" cy="18" r="2" fill="#0A2540" stroke="white" stroke-width="0.8" />
+          </svg>
+        </div>
+        <div style="text-align: center">
+          <div class="wordmark">PortLink</div>
+          <div class="wordmark-sub">Driver</div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
