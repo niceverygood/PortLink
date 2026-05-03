@@ -22,7 +22,6 @@ import type { ContainerType, PortCode } from '@prisma/client';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { calculateSettlement } from '@/lib/settlements';
-import { buildInvoiceData } from '@/lib/safe-freight/invoice-data';
 import { AcceptButton } from './accept-button';
 import { SafeFreightVerifier } from './SafeFreightVerifier';
 
@@ -70,25 +69,9 @@ export default async function DriverJobDetailPage({ params }: { params: Promise<
   const breakdown = calculateSettlement(order.fare);
   const portMeta = PORT_LABELS[order.port];
 
-  // 안전운임 v2 검증 데이터 — 차주 화면에 항상 노출 (시연 핵심).
-  // 환적은 적용 제외, 시행 기간 외도 검증 위젯 미노출.
-  let verifier: Parameters<typeof SafeFreightVerifier>[0] | null = null;
-  if (order.shipmentType === 'EXPORT_IMPORT') {
-    const built = await buildInvoiceData({ dispatchOrderId: order.id });
-    if (built.ok) {
-      verifier = {
-        orderId: order.id,
-        agreedFareKrw: order.fare,
-        legalMinKrw: built.data.safeFreight.finalConsignmentRateKrw,
-        distanceKm: built.data.safeFreight.distanceKm,
-        surcharges: built.data.safeFreight.appliedSurcharges,
-        effectiveSurchargeRate: 0, // surcharges 비어있으면 0
-        surchargeAmountKrw: built.data.safeFreight.surchargeAmountKrw,
-        waitingFeeKrw: built.data.safeFreight.waitingFeeKrw,
-        noticeNumber: built.data.safeFreight.snapshotMeta.noticeNumber,
-      };
-    }
-  }
+  // 안전운임 v2 검증 — SSR 부담 회피 위해 client-side에서 /api/freight/verify 호출.
+  // 환적은 적용 제외 → 위젯 미노출.
+  const showVerifier = order.shipmentType === 'EXPORT_IMPORT';
   const originShort = order.originRegion.split(' ').pop() ?? order.originRegion;
   const forwarderName = order.forwarder?.forwarder?.companyName ?? '의뢰 포워더';
 
@@ -151,8 +134,8 @@ export default async function DriverJobDetailPage({ params }: { params: Promise<
         </div>
       </section>
 
-      {/* 안전운임 검증 위젯 — Stage 8 §6-1 */}
-      {verifier && <SafeFreightVerifier {...verifier} />}
+      {/* 안전운임 검증 위젯 — Stage 8 §6-1 (client-side lazy fetch) */}
+      {showVerifier && <SafeFreightVerifier orderId={order.id} />}
 
       {/* 노선 카드 (navy) */}
       <section className="mx-5 mb-4 rounded-3xl bg-brand-navy p-5">

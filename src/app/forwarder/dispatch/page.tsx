@@ -3,7 +3,9 @@
  */
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { unstable_cache } from 'next/cache';
 import { Plus } from 'lucide-react';
+import type { UserRole } from '@prisma/client';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { dispatchOrderScope } from '@/lib/forwarder-scope';
@@ -13,16 +15,27 @@ import { DispatchListTable, type DispatchRow } from './dispatch-list-table';
 export const dynamic = 'force-dynamic';
 export const metadata = { title: '배차 관리' };
 
+/**
+ * 데이터 쿼리만 30초 캐시. auth/redirect는 매 요청마다 정상 실행.
+ * 같은 (userId, role) 조합으로 들어오면 30초 안에는 DB 안 침. 페이지 자체는 dynamic.
+ */
+const fetchDispatches = unstable_cache(
+  async (userId: string, role: UserRole) =>
+    prisma.dispatchOrder.findMany({
+      where: dispatchOrderScope({ userId, role }),
+      include: { trip: true },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    }),
+  ['forwarder-dispatch-list-v1'],
+  { revalidate: 30, tags: ['dispatch-list'] },
+);
+
 export default async function DispatchListPage() {
   const session = await auth();
   if (!session?.user?.id || !session.user.role) redirect('/login?kind=forwarder');
 
-  const orders = await prisma.dispatchOrder.findMany({
-    where: dispatchOrderScope({ userId: session.user.id, role: session.user.role }),
-    include: { trip: true },
-    orderBy: { createdAt: 'desc' },
-    take: 200,
-  });
+  const orders = await fetchDispatches(session.user.id, session.user.role);
 
   const rows: DispatchRow[] = orders.map((o) => ({
     id: o.id,

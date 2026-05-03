@@ -33,7 +33,9 @@ interface NotificationsResponse {
   data: { items: NotificationItem[]; unreadCount: number };
 }
 
-const POLL_INTERVAL_MS = 30_000;
+// 폴링 주기 — 모든 페이지에서 백그라운드로 돌므로 너무 짧으면 누적 부하.
+// 탭이 hidden일 땐 정지하고, foreground 복귀 시 즉시 1회 catch-up fetch.
+const POLL_INTERVAL_MS = 90_000;
 
 function formatRelative(iso: string): string {
   const ms = Date.now() - new Date(iso).getTime();
@@ -85,9 +87,35 @@ export function NotificationBell({ variant = 'light' }: { variant?: 'light' | 'd
   }, []);
 
   useEffect(() => {
+    let timer: ReturnType<typeof setInterval> | null = null;
+
+    function start() {
+      if (timer) return;
+      timer = setInterval(() => void fetchData(), POLL_INTERVAL_MS);
+    }
+    function stop() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+    }
+    function onVisibility() {
+      if (document.visibilityState === 'visible') {
+        // foreground 복귀 → 즉시 catch-up + 폴링 재개
+        void fetchData();
+        start();
+      } else {
+        stop();
+      }
+    }
+
     void fetchData();
-    const t = setInterval(() => void fetchData(), POLL_INTERVAL_MS);
-    return () => clearInterval(t);
+    if (document.visibilityState === 'visible') start();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [fetchData]);
 
   // 외부 클릭 닫기

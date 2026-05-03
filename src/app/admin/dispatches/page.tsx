@@ -3,6 +3,7 @@
  * 상단 KPI 4개 + 테이블. Trip 강제 취소 액션.
  */
 import { redirect } from 'next/navigation';
+import { unstable_cache } from 'next/cache';
 import { TripStatus } from '@prisma/client';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
@@ -14,6 +15,35 @@ import { DispatchesTable, type AdminDispatchRow } from './dispatches-table';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: '배차 모니터링' };
+
+/** KPI 4종 + 최근 100건 조회를 30초 캐시. admin은 모두 동일한 데이터라 글로벌 캐시 가능. */
+const fetchDashboardData = unstable_cache(
+  async (fromIso: string, toIso: string) => {
+    const from = new Date(fromIso);
+    const to = new Date(toIso);
+    const [openCount, activeTripCount, completedToday, cancelledToday, orders] = await Promise.all([
+      prisma.dispatchOrder.count({ where: { status: 'OPEN' } }),
+      prisma.trip.count({ where: { status: { in: ACTIVE_TRIP } } }),
+      prisma.dispatchOrder.count({
+        where: { status: 'COMPLETED', updatedAt: { gte: from, lt: to } },
+      }),
+      prisma.dispatchOrder.count({
+        where: { status: 'CANCELLED', updatedAt: { gte: from, lt: to } },
+      }),
+      prisma.dispatchOrder.findMany({
+        include: {
+          forwarder: { include: { forwarder: true } },
+          trip: { include: { driver: { include: { user: true } } } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 100,
+      }),
+    ]);
+    return { openCount, activeTripCount, completedToday, cancelledToday, orders };
+  },
+  ['admin-dispatches-dashboard-v1'],
+  { revalidate: 30, tags: ['dispatch-list'] },
+);
 
 const ACTIVE_TRIP: TripStatus[] = [
   TripStatus.PENDING,
@@ -40,24 +70,8 @@ export default async function AdminDispatchesPage() {
 
   const { from, to } = kstToday();
 
-  const [openCount, activeTripCount, completedToday, cancelledToday, orders] = await Promise.all([
-    prisma.dispatchOrder.count({ where: { status: 'OPEN' } }),
-    prisma.trip.count({ where: { status: { in: ACTIVE_TRIP } } }),
-    prisma.dispatchOrder.count({
-      where: { status: 'COMPLETED', updatedAt: { gte: from, lt: to } },
-    }),
-    prisma.dispatchOrder.count({
-      where: { status: 'CANCELLED', updatedAt: { gte: from, lt: to } },
-    }),
-    prisma.dispatchOrder.findMany({
-      include: {
-        forwarder: { include: { forwarder: true } },
-        trip: { include: { driver: { include: { user: true } } } },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 100,
-    }),
-  ]);
+  const { openCount, activeTripCount, completedToday, cancelledToday, orders } =
+    await fetchDashboardData(from.toISOString(), to.toISOString());
 
   const rows: AdminDispatchRow[] = orders.map((o) => ({
     id: o.id,
