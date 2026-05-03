@@ -7,7 +7,7 @@
 - `/driver/*` — **PortLink Driver** (차주 모바일 PWA)
 - `/admin/*` — 관리자 백오피스
 
-상세 스펙은 `CLAUDE.md` 참조.
+프로젝트 누적 컨텍스트 · 작업 룰 · 비즈니스 룰 · ADR · 카피 톤 · 표기 규칙 · RBAC 매트릭스: [CLAUDE.md](./CLAUDE.md) 참조 (모든 Claude 세션은 첫 응답 전 정독).
 
 ## 셋업
 
@@ -61,7 +61,7 @@ Next.js 14 · TypeScript strict · Tailwind + shadcn/ui · Prisma 6 · PostgreSQ
 - 한글: `포트링크`
 - 차주 앱: `PortLink Driver` / `포트링크 드라이버`
 
-색·폰트·문구 규칙은 `CLAUDE.md §1` 참조.
+색·폰트·문구 규칙은 [CLAUDE.md §3 카피 톤](./CLAUDE.md#3-카피-톤) · [§4 표기 규칙](./CLAUDE.md#4-표기-규칙) 참조.
 
 ## 환경 변수
 
