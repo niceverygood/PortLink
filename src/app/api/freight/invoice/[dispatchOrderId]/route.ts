@@ -25,6 +25,7 @@ export const dynamic = 'force-dynamic';
 const BodySchema = z
   .object({
     distanceKm: z.number().int().positive().max(2000).optional(),
+    format: z.enum(['json', 'pdf']).optional(),
   })
   .optional();
 
@@ -78,6 +79,19 @@ export async function POST(req: Request, ctx: { params: Promise<{ dispatchOrderI
     };
     return NextResponse.json(apiErr(built.error, errorMessage(built.error)), {
       status: statusMap[built.error] ?? 400,
+    });
+  }
+
+  if (parsed.data?.format === 'pdf') {
+    const { renderToBuffer } = await import('@react-pdf/renderer');
+    const { FreightInvoicePdf } = await import('@/lib/safe-freight/pdf-templates');
+    const buffer = await renderToBuffer(FreightInvoicePdf({ data: built.data }));
+    return new NextResponse(new Uint8Array(buffer), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="invoice-${built.data.dispatchOrder.orderNo}.pdf"`,
+      },
     });
   }
 

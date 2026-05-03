@@ -103,8 +103,18 @@ export function NewDispatchForm({ regions }: { regions: RegionOption[] }) {
   const fareNumber = Number(fare) || 0;
   const minAllowed = safeRate ? Math.round(safeRate * 0.9) : null;
   const fareInvalid = minAllowed !== null && fareNumber > 0 && fareNumber < minAllowed;
+  // §4 — 약정 < 안전위탁운임이지만 90% 이상인 회색 영역. 경고 + 체크박스 인지 동의 필요.
+  const fareBelowSafe =
+    safeRate !== null && fareNumber > 0 && fareNumber < safeRate && !fareInvalid;
+  const fareShortfall =
+    safeRate !== null && fareNumber > 0 ? Math.max(0, safeRate - fareNumber) : 0;
   const platformFee = fareNumber > 0 ? Math.round(fareNumber * 0.05) : 0;
   const driverPayout = fareNumber > 0 ? fareNumber - platformFee : 0;
+
+  const [acknowledgeBelowSafe, setAcknowledgeBelowSafe] = useState(false);
+  // 안전위탁운임 미만일 때만 인지 동의 필수.
+  const needsAcknowledgement = fareBelowSafe;
+  const ackSatisfied = !needsAcknowledgement || acknowledgeBelowSafe;
 
   const canSubmit =
     originRegion.length > 0 &&
@@ -113,7 +123,8 @@ export function NewDispatchForm({ regions }: { regions: RegionOption[] }) {
     containerType &&
     pickupAt &&
     fareNumber > 0 &&
-    !fareInvalid;
+    !fareInvalid &&
+    ackSatisfied;
 
   function submit() {
     setSubmitErr(null);
@@ -259,6 +270,23 @@ export function NewDispatchForm({ regions }: { regions: RegionOption[] }) {
             <p className="mt-2 text-[11.5px] text-brand-error">
               안전운임 한도(90%) 미만입니다. {formatKRW(minAllowed!)} 이상 입력하세요.
             </p>
+          )}
+          {fareBelowSafe && (
+            <div className="mt-2 space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-3">
+              <p className="text-[11.5px] font-semibold text-amber-900">
+                ⚠️ 법정 안전위탁운임 {formatKRW(safeRate!)}, 입력값 {formatKRW(fareNumber)} (▼{' '}
+                {formatKRW(fareShortfall)})
+              </p>
+              <label className="flex cursor-pointer items-start gap-2 text-[11px] text-amber-800">
+                <input
+                  type="checkbox"
+                  checked={acknowledgeBelowSafe}
+                  onChange={(e) => setAcknowledgeBelowSafe(e.target.checked)}
+                  className="mt-0.5"
+                />
+                <span>법정 최저운임 미만임을 인지하고 저장합니다 (감사로그에 기록됨)</span>
+              </label>
+            </div>
           )}
           {submitErr && (
             <Alert variant="destructive" className="mt-3">

@@ -21,7 +21,11 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const BodySchema = z
-  .object({ distanceKm: z.number().int().positive().max(2000).optional() })
+  .object({
+    distanceKm: z.number().int().positive().max(2000).optional(),
+    /** 'pdf'면 application/pdf 바이너리, 그 외/누락 시 JSON. */
+    format: z.enum(['json', 'pdf']).optional(),
+  })
   .optional();
 
 export async function POST(req: Request, ctx: { params: Promise<{ dispatchOrderId: string }> }) {
@@ -86,16 +90,32 @@ export async function POST(req: Request, ctx: { params: Promise<{ dispatchOrderI
     );
   }
 
+  const disclaimer = {
+    header: '본 자료는 PortLink가 입력 데이터를 기반으로 자동 생성한 참고 자료입니다.',
+    middle: `데이터 출처: ${built.data.safeFreight.snapshotMeta.noticeNumber}, 계산 시점: ${built.data.generatedAt.toISOString()}.`,
+    footer:
+      '신고 여부와 신고 내용에 대한 책임은 차주 본인에게 있으며, PortLink는 신고 결과에 대해 어떠한 법적 책임도 부담하지 않습니다.',
+  };
+
+  // PDF 요청이면 바이너리 응답 — @react-pdf/renderer는 server-only이므로 dynamic import.
+  if (parsed.data?.format === 'pdf') {
+    const { renderToBuffer } = await import('@react-pdf/renderer');
+    const { NonpaymentReportPdf } = await import('@/lib/safe-freight/pdf-templates');
+    const buffer = await renderToBuffer(NonpaymentReportPdf({ data: built.data, disclaimer }));
+    return new NextResponse(new Uint8Array(buffer), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="report-${built.data.dispatchOrder.orderNo}.pdf"`,
+      },
+    });
+  }
+
   return NextResponse.json(
     apiOk({
       ...built.data,
       // 면책 문구 (§3 — 강하게)
-      disclaimer: {
-        header: '본 자료는 PortLink가 입력 데이터를 기반으로 자동 생성한 참고 자료입니다.',
-        middle: `데이터 출처: ${built.data.safeFreight.snapshotMeta.noticeNumber}, 계산 시점: ${built.data.generatedAt.toISOString()}.`,
-        footer:
-          '신고 여부와 신고 내용에 대한 책임은 차주 본인에게 있으며, PortLink는 신고 결과에 대해 어떠한 법적 책임도 부담하지 않습니다.',
-      },
+      disclaimer,
     }),
   );
 }
