@@ -36,7 +36,8 @@ enum UserStatus {
 enum ContainerType {
   TWENTY_FT      @map("20FT")
   FORTY_FT       @map("40FT")
-  FORTY_FT_HC    @map("40FT_HC")
+  FORTY_FT_HC    @map("40FT_HC")  // 높이만 다른 40FT 변종 — 안전운임은 40FT 동치
+  FORTY_FIVE_FT  @map("45FT")     // 40FT × 1.125 자동 계산 (제19조)
 }
 
 enum PortCode {
@@ -78,6 +79,19 @@ enum AuditAction {
   STATUS_CHANGE
   LOGIN
   PERMISSION
+}
+
+/** 안전운임 운임 타입 (제1조). 3종 모두 별도 컬럼/별도 row로 저장. */
+enum RateType {
+  CONSIGNMENT     // 안전위탁운임 (운수사업자 → 차주)
+  INTER_CARRIER   // 운수사업자 간 운임 (운송사 ↔ 운송사 재위탁) — admin/carrier만 노출
+  TRANSPORT       // 안전운송운임 (화주 → 운수사업자)
+}
+
+/** 운송 유형 — 안전운임 적용 여부 분기 (현재 환적은 제외 정책). */
+enum ShipmentType {
+  EXPORT_IMPORT   // 수출입 컨테이너 — 안전운임 적용
+  TRANSSHIPMENT   // 환적 — 적용 제외 (제외 정책은 §10에서 결정)
 }
 
 enum NotificationType {
@@ -197,9 +211,12 @@ model Vehicle {
 }
 
 // ─────────────────────────────────────────────
-// 안전운임 마스터
+// 안전운임 마스터 — Stage 1 모델 (region/port 기반)
 // ─────────────────────────────────────────────
 
+/// @deprecated Stage 9에서 제거 예정.
+/// 신규 거리 기반 SafeFreightRate 사용. 이미 시드 58건 + 기존 배차가 의존하므로
+/// Stage 8에서는 병존 (paradigm이 다르므로 강제 통합 X).
 model SafeRate {
   id            Int           @id @default(autoincrement())
   originRegion  String        @map("origin_region")     // "경기 평택"
@@ -231,13 +248,15 @@ model DispatchOrder {
   pickupAt        DateTime            @map("pickup_at")        // 상차 희망 시각 (UTC)
   fare            Int                                          // 안전운임 KRW 정수
   status          DispatchOrderStatus @default(OPEN)
+  shipmentType    ShipmentType        @default(EXPORT_IMPORT) @map("shipment_type") // 환적이면 안전운임 적용 제외
   notes           String?
   createdAt       DateTime            @default(now()) @map("created_at")
   updatedAt       DateTime            @updatedAt @map("updated_at")
 
-  forwarder User             @relation("ForwarderOrders", fields: [forwarderUserId], references: [id], onDelete: Restrict)
-  assigns   DispatchAssign[]
-  trip      Trip?
+  forwarder           User                @relation("ForwarderOrders", fields: [forwarderUserId], references: [id], onDelete: Restrict)
+  assigns             DispatchAssign[]
+  trip                Trip?
+  freightCalculation  FreightCalculation?
 
   @@index([status, pickupAt])
   @@index([forwarderUserId])
@@ -390,4 +409,113 @@ model Notification {
   @@index([userId, createdAt(sort: Desc)])
   @@index([userId, readAt])
   @@map("notifications")
+}
+
+// ─────────────────────────────────────────────
+// 안전운임 v2 — 거리 기반 (Stage 8)
+// 국토교통부고시 제2026-55호 + 매년 1월 갱신.
+// 연도별 스냅샷으로 분리해 과거 룰 보존 + 사후 분쟁 대비.
+// ─────────────────────────────────────────────
+
+/** 연도별 고시 스냅샷 — 1년 단위로 효력 분리. */
+model SafeFreightYearlySnapshot {
+  id            String   @id @default(cuid())
+  fiscalYear    Int      @unique @map("fiscal_year")        // 2026, 2027, ...
+  noticeNumber  String   @map("notice_number")              // "국토교통부고시 제2026-55호"
+  noticeDate    DateTime @map("notice_date")                // 고시일
+  effectiveFrom DateTime @map("effective_from")             // 시행 시작
+  effectiveTo   DateTime @map("effective_to")               // 시행 종료 (보통 effectiveFrom + 1년)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  rates           SafeFreightRate[]
+  surcharges      SurchargeRule[]
+  fuelAdjustments FuelPriceAdjustment[]
+
+  @@map("safe_freight_yearly_snapshots")
+}
+
+/** 거리·컨테이너·운임타입 매트릭스. (year, distance, container, rateType) 유니크. */
+model SafeFreightRate {
+  id               String        @id @default(cuid())
+  yearlySnapshotId String        @map("yearly_snapshot_id")
+  distanceKm       Int           @map("distance_km")          // 편도 거리
+  containerType    ContainerType @map("container_type")
+  rateType         RateType      @map("rate_type")
+  amountKrw        Int           @map("amount_krw")           // KRW 정수, VAT 미포함
+
+  yearlySnapshot SafeFreightYearlySnapshot @relation(fields: [yearlySnapshotId], references: [id], onDelete: Cascade)
+
+  @@unique([yearlySnapshotId, distanceKm, containerType, rateType], name: "uniq_safe_freight_rate")
+  @@index([distanceKm, containerType, rateType])
+  @@map("safe_freight_rates")
+}
+
+/** 할증 코드 마스터 — 연도별로 갱신될 수 있어 스냅샷 종속. */
+model SurchargeRule {
+  id               String  @id @default(cuid())
+  yearlySnapshotId String  @map("yearly_snapshot_id")
+  code             String                                   // "REEFER", "EXPLOSIVE", ...
+  description      String
+  rate             Decimal @db.Decimal(5, 4)                // 0.3000 = 30%, 1.0000 = 100%
+
+  yearlySnapshot SafeFreightYearlySnapshot @relation(fields: [yearlySnapshotId], references: [id], onDelete: Cascade)
+
+  @@unique([yearlySnapshotId, code], name: "uniq_surcharge_rule")
+  @@index([yearlySnapshotId])
+  @@map("surcharge_rules")
+}
+
+/** 분기별 유가 연동 조정 (제34조). ±50원 변동 시 적용. */
+model FuelPriceAdjustment {
+  id                 String   @id @default(cuid())
+  yearlySnapshotId   String   @map("yearly_snapshot_id")
+  quarterStartDate   DateTime @map("quarter_start_date")
+  quarterEndDate     DateTime @map("quarter_end_date")
+  averageDieselPrice Int      @map("average_diesel_price")    // KRW/L
+  baselinePrice      Int      @map("baseline_price")          // 비교 기준 가격
+  adjustmentRate     Decimal  @db.Decimal(6, 5) @map("adjustment_rate") // 양수=인상, 음수=인하
+  appliedFrom        DateTime @map("applied_from")
+  appliedTo          DateTime @map("applied_to")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  yearlySnapshot SafeFreightYearlySnapshot @relation(fields: [yearlySnapshotId], references: [id], onDelete: Cascade)
+
+  @@index([appliedFrom, appliedTo])
+  @@map("fuel_price_adjustments")
+}
+
+/** 배차 1건당 안전운임 계산 결과 스냅샷.
+ * 사후 분쟁 대비로 ruleVersionSnapshot에 계산 시점 룰 전체를 박아둠. */
+model FreightCalculation {
+  id                       String        @id @default(cuid())
+  dispatchOrderId          String        @unique @map("dispatch_order_id")
+  containerType            ContainerType @map("container_type")
+  originPortCode           String?       @map("origin_port_code")     // PortCode + 배후단지 코드 모두 받기 위해 String
+  originAddress            String        @map("origin_address")
+  destinationAddress       String        @map("destination_address")
+  totalDistanceKm          Decimal       @db.Decimal(7, 2) @map("total_distance_km") // 터미널 내 거리 포함
+
+  baseConsignmentRateKrw   Int @map("base_consignment_rate_krw")
+  baseInterCarrierRateKrw  Int @map("base_inter_carrier_rate_krw")
+  baseTransportRateKrw     Int @map("base_transport_rate_krw")
+
+  appliedSurcharges        Json   @map("applied_surcharges")           // [{code, rate, description}]
+  effectiveSurchargeRate   Decimal @db.Decimal(5, 4) @map("effective_surcharge_rate")
+  surchargeAmountKrw       Int     @map("surcharge_amount_krw")        // 위탁운임 기준
+
+  waitingFeeKrw            Int @default(0) @map("waiting_fee_krw")
+  emptyReturnFeeKrw        Int @default(0) @map("empty_return_fee_krw")
+  additionalFeesKrw        Int @default(0) @map("additional_fees_krw")
+
+  finalConsignmentRateKrw  Int @map("final_consignment_rate_krw")      // 차주 수령액
+  finalInterCarrierRateKrw Int @map("final_inter_carrier_rate_krw")
+  finalTransportRateKrw    Int @map("final_transport_rate_krw")        // 화주 청구액
+
+  calculatedAt             DateTime @default(now()) @map("calculated_at")
+  ruleVersionSnapshot      Json     @map("rule_version_snapshot")      // 시점 룰 전체
+
+  dispatchOrder DispatchOrder @relation(fields: [dispatchOrderId], references: [id], onDelete: Cascade)
+
+  @@index([calculatedAt])
+  @@map("freight_calculations")
 }

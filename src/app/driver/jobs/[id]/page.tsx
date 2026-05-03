@@ -39,6 +39,7 @@ const CONTAINER_DESC: Record<ContainerType, string> = {
   TWENTY_FT: '20FT · 일반 화물 · ~21t',
   FORTY_FT: '40FT · 일반 화물 · ~26t',
   FORTY_FT_HC: '40HC · 일반 화물 · ~26t',
+  FORTY_FIVE_FT: '45FT · 일반 화물 · ~26t (40FT × 1.125)',
 };
 
 function formatDateTime(d: Date): string {

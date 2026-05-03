@@ -364,9 +364,11 @@ if (REGIONS.length !== 30) {
   throw new Error(`REGIONS must be exactly 30, got ${REGIONS.length}`);
 }
 
-/** 차종별 운임 계수 (40FT 기준 1.0). 안전운임 더미 산정에 사용. */
+/** 차종별 운임 계수 (40FT 기준 1.0). Stage 1 SafeRate(deprecated)에서만 사용.
+ * 신규 SafeFreightRate(거리 기반)는 별도 거리표가 있어 계수 불필요. */
 export const CONTAINER_TYPE_COEFFICIENT = {
   '20FT': 0.75,
   '40FT': 1.0,
   '40FT_HC': 1.05,
+  '45FT': 1.125,
 } as const;
