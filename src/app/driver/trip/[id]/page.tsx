@@ -11,6 +11,7 @@ import { TimelineStepper } from '@/components/portlink/TimelineStepper';
 import { PortBadge } from '@/components/portlink/PortBadge';
 import { ContainerTypeIcon } from '@/components/portlink/ContainerTypeIcon';
 import { PriceDisplay } from '@/components/portlink/PriceDisplay';
+import { NearbyOpenRecommendation } from './NearbyOpenRecommendation';
 import { TripActionButton } from './action-button';
 
 export const dynamic = 'force-dynamic';
@@ -108,6 +109,8 @@ export default async function DriverTripDetailPage({
         </section>
       )}
 
+      {trip.status === TripStatus.COMPLETED && <NearbyOpenRecommendation tripId={trip.id} />}
+
       <div className="fixed inset-x-0 bottom-16 z-10 mx-auto max-w-md px-4">
         {nextAction ? (
           <TripActionButton
@@ -122,11 +125,11 @@ export default async function DriverTripDetailPage({
           >
             정산 확인
           </Link>
-        ) : (
+        ) : trip.status === TripStatus.CANCELLED ? (
           <div className="rounded-3xl bg-slate-200 py-4 text-center text-body font-medium text-slate-500">
             취소된 운송
           </div>
-        )}
+        ) : null}
       </div>
     </main>
   );

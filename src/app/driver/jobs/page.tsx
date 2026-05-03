@@ -8,8 +8,9 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { DispatchOrderStatus, UserRole } from '@prisma/client';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { JobCard } from './job-card';
+import { JobListClient } from './JobListClient';
 import { calculateSettlement } from '@/lib/settlements';
+import { getRegionCoord } from '@/config/geocoords';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: '가용 배차' };
@@ -96,8 +97,8 @@ export default async function DriverJobsPage() {
         </div>
       </header>
 
-      {/* 카드 리스트 */}
-      <div className="space-y-3 px-4 pb-4 pt-4">
+      {/* 카드 리스트 — 거리 정렬은 클라 측 (위치 권한 받으면) */}
+      <div className="px-4 pb-4 pt-4">
         {orders.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center">
             <p className="text-body text-slate-500">현재 가용 배차가 없습니다</p>
@@ -106,19 +107,19 @@ export default async function DriverJobsPage() {
             </p>
           </div>
         ) : (
-          enriched.map(({ order, urgent }) => (
-            <JobCard
-              key={order.id}
-              id={order.id}
-              orderNo={order.orderNo}
-              originRegion={order.originRegion}
-              port={order.port}
-              containerType={order.containerType}
-              pickupAt={order.pickupAt.toISOString()}
-              fare={order.fare}
-              urgent={urgent}
-            />
-          ))
+          <JobListClient
+            items={enriched.map(({ order, urgent }) => ({
+              id: order.id,
+              orderNo: order.orderNo,
+              originRegion: order.originRegion,
+              port: order.port,
+              containerType: order.containerType,
+              pickupAt: order.pickupAt.toISOString(),
+              fare: order.fare,
+              urgent,
+              originCoord: getRegionCoord(order.originRegion),
+            }))}
+          />
         )}
       </div>
     </main>

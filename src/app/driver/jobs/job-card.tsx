@@ -28,6 +28,8 @@ interface Props {
   pickupAt: string;
   fare: number;
   urgent?: boolean;
+  /** 차주 현재 위치 ↔ 출발지 거리 표시 (B 위치 기반 매칭). 없으면 미표시. */
+  distanceLabel?: string;
 }
 
 function formatPickup(iso: string): string {
@@ -49,6 +51,7 @@ export function JobCard({
   pickupAt,
   fare,
   urgent = false,
+  distanceLabel,
 }: Props) {
   const fareManwon = Math.round(fare / 10_000);
   const originShort = originRegion.split(' ').pop() ?? originRegion;
@@ -64,7 +67,14 @@ export function JobCard({
 
       <div className="mb-4 flex items-end justify-between">
         <div>
-          <p className="mb-1 text-[11px] font-medium text-slate-500">운임 · {orderNo}</p>
+          <p className="mb-1 text-[11px] font-medium text-slate-500">
+            운임 · {orderNo}
+            {distanceLabel && (
+              <span className="ml-2 inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                내 위치 {distanceLabel}
+              </span>
+            )}
+          </p>
           <p className="text-[32px] font-black tabular-nums leading-none tracking-[-0.04em] text-brand-navy">
             {fareManwon}
             <span className="ml-1 text-[18px] font-bold">만원</span>
