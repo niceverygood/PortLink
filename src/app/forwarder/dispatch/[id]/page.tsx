@@ -15,6 +15,7 @@ import { TimelineStepper } from '@/components/portlink/TimelineStepper';
 import { DriverAvatar } from '@/components/portlink/DriverAvatar';
 import { Topbar } from '@/components/forwarder/Topbar';
 import { CancelButton } from './cancel-button';
+import { InvoiceDownloadButton } from './InvoiceDownloadButton';
 import { formatKRW } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
@@ -74,9 +75,27 @@ export default async function DispatchDetailPage({ params }: { params: Promise<{
   const canCancel =
     !!trip && trip.status !== TripStatus.COMPLETED && trip.status !== TripStatus.CANCELLED;
 
+  // 청구서 PDF 다운로드 가능 여부 — 환적은 안전운임 적용 제외 (Stage 8 §10).
+  const invoiceDisabled = order.shipmentType === 'TRANSSHIPMENT';
+  const invoiceDisabledReason = invoiceDisabled
+    ? '환적 컨테이너는 안전운임 적용 제외 — 청구서 발급 불가'
+    : undefined;
+
   return (
     <>
-      <Topbar title={`배차 #${order.orderNo}`} subtitle={order.originRegion} />
+      <Topbar
+        title={`배차 #${order.orderNo}`}
+        subtitle={order.originRegion}
+        actions={
+          <InvoiceDownloadButton
+            orderId={order.id}
+            orderNo={order.orderNo}
+            variant="outline"
+            disabled={invoiceDisabled}
+            disabledReason={invoiceDisabledReason}
+          />
+        }
+      />
       <div className="flex-1 space-y-6 overflow-y-auto p-8">
         <Link
           href="/forwarder/dispatch"
@@ -108,6 +127,18 @@ export default async function DispatchDetailPage({ params }: { params: Promise<{
             <div className="text-caption text-slate-500">운임</div>
             <div className="mt-1 text-h1 font-semibold tabular-nums text-brand-navy">
               {formatKRW(order.fare)}
+            </div>
+            <p className="mt-2 text-[11px] text-slate-500">
+              담당자님, 청구서 PDF를 다운받으실 수 있습니다
+            </p>
+            <div className="mt-1 flex justify-end">
+              <InvoiceDownloadButton
+                orderId={order.id}
+                orderNo={order.orderNo}
+                variant="primary"
+                disabled={invoiceDisabled}
+                disabledReason={invoiceDisabledReason}
+              />
             </div>
           </div>
         </div>
