@@ -36,6 +36,19 @@ export interface OtpAbuseItem {
   since: Date;
 }
 
+export interface GpsSpoofingItem {
+  tripId: string;
+  orderNo: string;
+  driverCode: string;
+  driverName: string;
+  fromAction: string;
+  toAction: string;
+  distanceKm: number;
+  elapsedMin: number;
+  /** 평균 속도 km/h. */
+  avgSpeedKmh: number;
+}
+
 export interface SuspiciousLocationItem {
   tripId: string;
   orderNo: string;
@@ -252,23 +265,97 @@ function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number)
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
-/** 5 룰 일괄 실행. 대시보드/리스트 페이지에서 사용. */
+/** Rule 6 — GPS spoofing 의심:
+ * 같은 trip 안에서 인접 stamp 시간차 < 10분 + 거리 > 50km이면 비현실적 점프.
+ * 평균속도 300km/h 이상 → 좌표 조작 가능성. */
+export async function findGpsSpoofing(opts?: {
+  windowMs?: number;
+  distanceKmThreshold?: number;
+}): Promise<GpsSpoofingItem[]> {
+  const windowMs = opts?.windowMs ?? 10 * 60 * 1000;
+  const distThKm = opts?.distanceKmThreshold ?? 50;
+
+  const trips = await prisma.trip.findMany({
+    where: {
+      locationStamps: { some: {} },
+    },
+    include: {
+      locationStamps: { orderBy: { capturedAt: 'asc' } },
+      driver: { include: { user: true } },
+      dispatchOrder: { select: { orderNo: true } },
+    },
+    take: 200,
+    orderBy: { updatedAt: 'desc' },
+  });
+
+  const result: GpsSpoofingItem[] = [];
+  for (const t of trips) {
+    if (t.locationStamps.length < 2) continue;
+    for (let i = 1; i < t.locationStamps.length; i += 1) {
+      const prev = t.locationStamps[i - 1]!;
+      const curr = t.locationStamps[i]!;
+      const elapsedMs = curr.capturedAt.getTime() - prev.capturedAt.getTime();
+      if (elapsedMs <= 0) continue;
+      const distKm =
+        haversineMeters(
+          Number(prev.latitude),
+          Number(prev.longitude),
+          Number(curr.latitude),
+          Number(curr.longitude),
+        ) / 1000;
+      if (elapsedMs < windowMs && distKm > distThKm) {
+        const avgSpeedKmh = distKm / (elapsedMs / 3_600_000);
+        result.push({
+          tripId: t.id,
+          orderNo: t.dispatchOrder.orderNo,
+          driverCode: t.driver.driverCode,
+          driverName: t.driver.user.name,
+          fromAction: prev.action,
+          toAction: curr.action,
+          distanceKm: Number(distKm.toFixed(1)),
+          elapsedMin: Number((elapsedMs / 60_000).toFixed(1)),
+          avgSpeedKmh: Math.round(avgSpeedKmh),
+        });
+        if (result.length >= MAX_RESULTS) return result;
+        break; // 한 trip 안에서 첫 의심점만 보고 (중복 노이즈 회피)
+      }
+    }
+  }
+  return result;
+}
+
+/** 6 룰 일괄 실행. 대시보드/리스트 페이지에서 사용. */
 export async function runAllAnomalyRules(): Promise<{
   fareViolations: FareViolationItem[];
   driverCancels: DriverCancelItem[];
   otpAbuse: OtpAbuseItem[];
   duplicateAddress: DuplicateAddressItem[];
   suspiciousLocations: SuspiciousLocationItem[];
+  gpsSpoofing: GpsSpoofingItem[];
 }> {
-  const [fareViolations, driverCancels, otpAbuse, duplicateAddress, suspiciousLocations] =
-    await Promise.all([
-      findFareViolations(),
-      findDriverCancelAbuse(),
-      findOtpAbuse(),
-      findDuplicateAddress(),
-      findSuspiciousLocation(),
-    ]);
-  return { fareViolations, driverCancels, otpAbuse, duplicateAddress, suspiciousLocations };
+  const [
+    fareViolations,
+    driverCancels,
+    otpAbuse,
+    duplicateAddress,
+    suspiciousLocations,
+    gpsSpoofing,
+  ] = await Promise.all([
+    findFareViolations(),
+    findDriverCancelAbuse(),
+    findOtpAbuse(),
+    findDuplicateAddress(),
+    findSuspiciousLocation(),
+    findGpsSpoofing(),
+  ]);
+  return {
+    fareViolations,
+    driverCancels,
+    otpAbuse,
+    duplicateAddress,
+    suspiciousLocations,
+    gpsSpoofing,
+  };
 }
 
 // Prisma 사용으로 import 경고 회피

@@ -4,7 +4,15 @@
  */
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { MapPin, Navigation, Shield, Smartphone, UserMinus, type LucideIcon } from 'lucide-react';
+import {
+  MapPin,
+  Navigation,
+  Shield,
+  Smartphone,
+  UserMinus,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { Topbar } from '@/components/forwarder/Topbar';
 import { runAllAnomalyRules } from '@/lib/anomaly';
@@ -17,18 +25,25 @@ export default async function AdminAnomalyPage() {
   const session = await auth();
   if (!session?.user?.id) redirect('/login?kind=admin');
 
-  const { fareViolations, driverCancels, otpAbuse, duplicateAddress, suspiciousLocations } =
-    await runAllAnomalyRules();
+  const {
+    fareViolations,
+    driverCancels,
+    otpAbuse,
+    duplicateAddress,
+    suspiciousLocations,
+    gpsSpoofing,
+  } = await runAllAnomalyRules();
   const totalCount =
     fareViolations.length +
     driverCancels.length +
     otpAbuse.length +
     duplicateAddress.length +
-    suspiciousLocations.length;
+    suspiciousLocations.length +
+    gpsSpoofing.length;
 
   return (
     <>
-      <Topbar title="이상 거래" subtitle={`5개 룰 적용 결과 — 총 ${totalCount}건 탐지`} />
+      <Topbar title="이상 거래" subtitle={`6개 룰 적용 결과 — 총 ${totalCount}건 탐지`} />
       <div className="flex-1 space-y-4 overflow-y-auto p-8">
         <Section
           Icon={Shield}
@@ -132,6 +147,38 @@ export default async function AdminAnomalyPage() {
                   <span className="text-slate-700">{d.originAddress}</span>
                   <span className="tabular-nums text-brand-warning">
                     {d.count}건 · 포워더 {d.forwarderUserIds.length}명
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Section>
+
+        <Section
+          Icon={Zap}
+          title="GPS spoofing 의심 (10분 내 50km+ 점프)"
+          subtitle="좌표 조작 가능성 — 평균속도 300km/h 이상"
+          count={gpsSpoofing.length}
+          accent="error"
+        >
+          {gpsSpoofing.length === 0 ? (
+            <Empty />
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {gpsSpoofing.map((g) => (
+                <li
+                  key={g.tripId + g.fromAction}
+                  className="flex items-center justify-between gap-2 px-4 py-2 text-[12px]"
+                >
+                  <span className="font-mono text-slate-700">#{g.orderNo}</span>
+                  <span className="font-mono text-[10.5px] text-slate-500">
+                    {g.fromAction} → {g.toAction}
+                  </span>
+                  <span>
+                    {g.driverCode} · {g.driverName}
+                  </span>
+                  <span className="tabular-nums text-brand-error">
+                    {g.distanceKm}km / {g.elapsedMin}분 ({g.avgSpeedKmh}km/h)
                   </span>
                 </li>
               ))}

@@ -94,6 +94,15 @@ enum ShipmentType {
   TRANSSHIPMENT   // 환적 — 적용 제외 (제외 정책은 §10에서 결정)
 }
 
+/** 공차 운행 보상 안내 funnel 단계 (Stage 9-prep).
+ * PortLink는 자동 청구 X. 차주가 직접 청구하는 양식만 제공.
+ * 후속 CLAIMED/PAID 등은 차주 수동 입력으로 추가 (Phase 2). */
+enum EmptyRunChargeStatus {
+  DETECTED        // 시스템이 감지 — 차주에게 안내 전
+  NOTICE_SHOWN    // 차주가 trip 상세에서 안내 카드를 봤음
+  PDF_DOWNLOADED  // 차주가 청구서 양식 PDF를 다운로드
+}
+
 /** Trip 상태 액션별 좌표 스탬프 (위치 스탬프 기능). */
 enum TripStampAction {
   DEPARTED
@@ -323,17 +332,21 @@ model Trip {
  *
  * MVP에선 자동 감지 + 차주에게 안내까지. Settlement 자동 합산은 Stage 9. */
 model EmptyRunCharge {
-  id            String        @id @default(cuid())
-  tripId        String        @unique @map("trip_id")              // 보상 받는 다음 trip
-  basedOnTripId String        @map("based_on_trip_id")             // 직전 완료 trip
-  distanceKm    Decimal       @db.Decimal(7, 2) @map("distance_km")
-  chargeKrw     Int           @map("charge_krw")                   // 안전위탁운임 × 50%
-  containerType ContainerType @map("container_type")
-  detectedAt    DateTime      @default(now()) @map("detected_at")
+  id            String               @id @default(cuid())
+  tripId        String               @unique @map("trip_id")
+  basedOnTripId String               @map("based_on_trip_id")
+  distanceKm    Decimal              @db.Decimal(7, 2) @map("distance_km")
+  chargeKrw     Int                  @map("charge_krw")
+  containerType ContainerType        @map("container_type")
+  status        EmptyRunChargeStatus @default(DETECTED)
+  detectedAt    DateTime             @default(now()) @map("detected_at")
+  noticeShownAt DateTime?            @map("notice_shown_at")
+  pdfDownloadedAt DateTime?          @map("pdf_downloaded_at")
 
   trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
 
   @@index([basedOnTripId])
+  @@index([status])
   @@map("empty_run_charges")
 }
 

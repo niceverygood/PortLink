@@ -13,13 +13,17 @@
  *
  * Settlement 자동 합산은 Stage 9. MVP에선 차주 화면 안내만.
  */
-import { ContainerType, RateType, TripStatus } from '@prisma/client';
+import { AuditAction, ContainerType, RateType, TripStatus } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { getRegionCoord } from '@/config/geocoords';
 import { haversineMeters } from '@/lib/distance';
 
 const EMPTY_RUN_THRESHOLD_KM = 10; // 제14조 기준
 const COMPENSATION_RATE = 0.5; // 왕복운임의 50%
+/** GPS spoofing 1차 가드 — 시간 대비 거리(평균속도)가 비현실적이면 §14 적용 skip.
+ * 50km / 10min = 평균 300km/h → 사실상 비행기/허위 좌표만 trigger. */
+const SPOOFING_TIME_WINDOW_MS = 10 * 60 * 1000;
+const SPOOFING_DISTANCE_KM = 50;
 
 export interface DetectResult {
   detected: boolean;
@@ -28,7 +32,8 @@ export interface DetectResult {
     | 'NO_PREV_LOCATION'
     | 'NO_DESTINATION_COORD'
     | 'BELOW_THRESHOLD'
-    | 'NO_RATE_TABLE_MATCH';
+    | 'NO_RATE_TABLE_MATCH'
+    | 'SPOOFING_SUSPECTED';
   distanceKm?: number;
   chargeKrw?: number;
   basedOnTripId?: string;
@@ -71,6 +76,32 @@ export async function detectAndRecordEmptyRun(opts: {
   const distKm = distM / 1000;
   if (distKm < EMPTY_RUN_THRESHOLD_KM) {
     return { detected: false, reason: 'BELOW_THRESHOLD', distanceKm: distKm };
+  }
+
+  // 4.5) GPS spoofing 1차 가드 — 직전 stamp 시점 → 지금까지 평균 속도 체크.
+  //     너무 빠르면 좌표 조작 의심. §14 적용 skip + AuditLog 기록.
+  const elapsedMs = Date.now() - stamp.capturedAt.getTime();
+  if (elapsedMs > 0 && elapsedMs < SPOOFING_TIME_WINDOW_MS && distKm > SPOOFING_DISTANCE_KM) {
+    try {
+      await prisma.auditLog.create({
+        data: {
+          actorUserId: null, // 시스템 검출
+          entity: 'EmptyRunCharge',
+          entityId: opts.newTripId,
+          action: AuditAction.STATUS_CHANGE,
+          before: { detected: 'pending' },
+          after: {
+            skipped: 'SPOOFING_SUSPECTED',
+            distanceKm: Number(distKm.toFixed(2)),
+            elapsedMs,
+            basedOnTripId: prevTrip.id,
+          },
+        },
+      });
+    } catch (e) {
+      console.error('[empty-run] spoofing audit failed', e);
+    }
+    return { detected: false, reason: 'SPOOFING_SUSPECTED', distanceKm: distKm };
   }
 
   // 5) 보상액 계산 — 안전위탁운임 표 lookup
@@ -119,4 +150,9 @@ export async function detectAndRecordEmptyRun(opts: {
 }
 
 /** 시연/디버그용 export. */
-export const __test__ = { EMPTY_RUN_THRESHOLD_KM, COMPENSATION_RATE };
+export const __test__ = {
+  EMPTY_RUN_THRESHOLD_KM,
+  COMPENSATION_RATE,
+  SPOOFING_TIME_WINDOW_MS,
+  SPOOFING_DISTANCE_KM,
+};

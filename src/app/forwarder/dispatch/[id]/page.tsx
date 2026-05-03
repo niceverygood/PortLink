@@ -264,21 +264,34 @@ export default async function DispatchDetailPage({ params }: { params: Promise<{
         )}
 
         {trip?.emptyRunCharge && (
-          <section className="rounded-lg border-2 border-emerald-300 bg-emerald-50/60 p-5">
-            <h2 className="mb-2 text-body font-semibold text-emerald-900">
-              ⚡ 공차 운행 보상 청구 (§14)
+          <section className="rounded-lg border border-slate-200 bg-slate-50 p-5">
+            <h2 className="mb-2 text-body font-semibold text-slate-700">
+              💡 안전운임 §14 안내 (참고)
             </h2>
-            <p className="text-[12.5px] text-emerald-800">
-              차주가 직전 운송지에서{' '}
-              <span className="font-bold tabular-nums">
-                {Number(trip.emptyRunCharge.distanceKm).toFixed(1)}km
-              </span>{' '}
-              공차 이동했습니다. 안전운임 제14조에 따라{' '}
-              <span className="font-bold tabular-nums">
-                {formatKRW(trip.emptyRunCharge.chargeKrw)}
-              </span>
-              의 보상을 청구할 수 있습니다.
+            <p className="text-[12.5px] leading-relaxed text-slate-600">
+              차주님께 안전운임 제14조(공차 운행) 보상 청구권이 안내되었습니다. 청구 여부와 청구서
+              발송은 차주님이 직접 결정합니다. PortLink는 자동 청구를 대행하지 않습니다.
             </p>
+            <div className="mt-3 grid grid-cols-3 gap-3 text-[11.5px] text-slate-500">
+              <div>
+                <p>공차 거리</p>
+                <p className="mt-0.5 font-bold tabular-nums text-slate-800">
+                  {Number(trip.emptyRunCharge.distanceKm).toFixed(1)} km
+                </p>
+              </div>
+              <div>
+                <p>안내된 산정액</p>
+                <p className="mt-0.5 font-bold tabular-nums text-slate-800">
+                  {formatKRW(trip.emptyRunCharge.chargeKrw)}
+                </p>
+              </div>
+              <div>
+                <p>안내 단계</p>
+                <p className="mt-0.5 font-mono text-[10.5px] text-slate-700">
+                  {trip.emptyRunCharge.status}
+                </p>
+              </div>
+            </div>
           </section>
         )}
 
