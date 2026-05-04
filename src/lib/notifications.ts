@@ -4,6 +4,7 @@
  */
 import type { NotificationType, Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
+import { sendPushToUser } from '@/lib/push';
 
 export interface CreateNotificationInput {
   userId: string;
@@ -23,7 +24,7 @@ export async function createNotification(
   tx: Prisma.TransactionClient | typeof prisma = prisma,
 ) {
   try {
-    return await tx.notification.create({
+    const created = await tx.notification.create({
       data: {
         userId: input.userId,
         type: input.type,
@@ -33,6 +34,15 @@ export async function createNotification(
         metadata: input.metadata,
       },
     });
+    // 푸시는 트랜잭션 외부에서 fire-and-forget — 알림 row는 이미 커밋됨.
+    // 트랜잭션 내부에서 호출돼도 실패가 트랜잭션을 깨지 않도록 catch.
+    void sendPushToUser(input.userId, {
+      title: input.title,
+      body: input.body,
+      link: input.link,
+      collapseId: input.type,
+    }).catch((e) => console.error('[push] sendPushToUser failed', e));
+    return created;
   } catch (e) {
     // 알림 실패가 본 액션을 막으면 안 됨. 로그만.
     console.error('[notifications] createNotification failed', e);

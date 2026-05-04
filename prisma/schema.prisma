@@ -34,10 +34,10 @@ enum UserStatus {
 }
 
 enum ContainerType {
-  TWENTY_FT      @map("20FT")
-  FORTY_FT       @map("40FT")
-  FORTY_FT_HC    @map("40FT_HC")  // 높이만 다른 40FT 변종 — 안전운임은 40FT 동치
-  FORTY_FIVE_FT  @map("45FT")     // 40FT × 1.125 자동 계산 (제19조)
+  TWENTY_FT     @map("20FT")
+  FORTY_FT      @map("40FT")
+  FORTY_FT_HC   @map("40FT_HC") // 높이만 다른 40FT 변종 — 안전운임은 40FT 동치
+  FORTY_FIVE_FT @map("45FT") // 40FT × 1.125 자동 계산 (제19조)
 }
 
 enum PortCode {
@@ -49,26 +49,26 @@ enum PortCode {
 }
 
 enum DispatchOrderStatus {
-  OPEN       // 등록됨, 매칭 대기
-  ASSIGNED   // 차주 수락 완료
-  COMPLETED  // 운송 완료
-  CANCELLED  // 취소
+  OPEN // 등록됨, 매칭 대기
+  ASSIGNED // 차주 수락 완료
+  COMPLETED // 운송 완료
+  CANCELLED // 취소
 }
 
 enum TripStatus {
-  PENDING     // 배정됐으나 출발 전
-  DEPARTED    // 출발
-  LOADED      // 상차 완료
-  IN_TRANSIT  // 이동중
-  UNLOADED    // 하차 완료
-  COMPLETED   // 운송 완료
-  CANCELLED   // 취소
+  PENDING // 배정됐으나 출발 전
+  DEPARTED // 출발
+  LOADED // 상차 완료
+  IN_TRANSIT // 이동중
+  UNLOADED // 하차 완료
+  COMPLETED // 운송 완료
+  CANCELLED // 취소
 }
 
 enum SettlementStatus {
-  DRAFT       // 자동 생성, 미확정
-  CONFIRMED   // 차주/포워더 양측 확인
-  PAID        // 정산 완료
+  DRAFT // 자동 생성, 미확정
+  CONFIRMED // 차주/포워더 양측 확인
+  PAID // 정산 완료
   CANCELLED
 }
 
@@ -81,29 +81,37 @@ enum AuditAction {
   PERMISSION
 }
 
-/** 안전운임 운임 타입 (제1조). 3종 모두 별도 컬럼/별도 row로 저장. */
+/**
+ * 안전운임 운임 타입 (제1조). 3종 모두 별도 컬럼/별도 row로 저장.
+ */
 enum RateType {
-  CONSIGNMENT     // 안전위탁운임 (운수사업자 → 차주)
-  INTER_CARRIER   // 운수사업자 간 운임 (운송사 ↔ 운송사 재위탁) — admin/carrier만 노출
-  TRANSPORT       // 안전운송운임 (화주 → 운수사업자)
+  CONSIGNMENT // 안전위탁운임 (운수사업자 → 차주)
+  INTER_CARRIER // 운수사업자 간 운임 (운송사 ↔ 운송사 재위탁) — admin/carrier만 노출
+  TRANSPORT // 안전운송운임 (화주 → 운수사업자)
 }
 
-/** 운송 유형 — 안전운임 적용 여부 분기 (현재 환적은 제외 정책). */
+/**
+ * 운송 유형 — 안전운임 적용 여부 분기 (현재 환적은 제외 정책).
+ */
 enum ShipmentType {
-  EXPORT_IMPORT   // 수출입 컨테이너 — 안전운임 적용
-  TRANSSHIPMENT   // 환적 — 적용 제외 (제외 정책은 §10에서 결정)
+  EXPORT_IMPORT // 수출입 컨테이너 — 안전운임 적용
+  TRANSSHIPMENT // 환적 — 적용 제외 (제외 정책은 §10에서 결정)
 }
 
-/** 공차 운행 보상 안내 funnel 단계 (Stage 9-prep).
+/**
+ * 공차 운행 보상 안내 funnel 단계 (Stage 9-prep).
  * PortLink는 자동 청구 X. 차주가 직접 청구하는 양식만 제공.
- * 후속 CLAIMED/PAID 등은 차주 수동 입력으로 추가 (Phase 2). */
+ * 후속 CLAIMED/PAID 등은 차주 수동 입력으로 추가 (Phase 2).
+ */
 enum EmptyRunChargeStatus {
-  DETECTED        // 시스템이 감지 — 차주에게 안내 전
-  NOTICE_SHOWN    // 차주가 trip 상세에서 안내 카드를 봤음
-  PDF_DOWNLOADED  // 차주가 청구서 양식 PDF를 다운로드
+  DETECTED // 시스템이 감지 — 차주에게 안내 전
+  NOTICE_SHOWN // 차주가 trip 상세에서 안내 카드를 봤음
+  PDF_DOWNLOADED // 차주가 청구서 양식 PDF를 다운로드
 }
 
-/** Trip 상태 액션별 좌표 스탬프 (위치 스탬프 기능). */
+/**
+ * Trip 상태 액션별 좌표 스탬프 (위치 스탬프 기능).
+ */
 enum TripStampAction {
   DEPARTED
   LOADED
@@ -113,18 +121,18 @@ enum TripStampAction {
 }
 
 enum NotificationType {
-  DISPATCH_NEW          // 새 배차 등록 (차주 알림)
-  DISPATCH_ACCEPTED     // 차주가 수락 (포워더 알림)
-  TRIP_DEPARTED         // 출발 보고 (포워더 알림)
-  TRIP_LOADED           // 상차 완료 (포워더 알림)
-  TRIP_UNLOADED         // 하차 완료 (포워더 알림)
-  TRIP_COMPLETED        // 운송 완료 (포워더 알림)
-  TRIP_CANCELLED        // 운송 취소
-  SETTLEMENT_READY      // 정산 확정 대기 (양측)
-  SETTLEMENT_PAID       // 정산 지급 완료 (차주 알림)
-  ADMIN_APPROVAL        // 가입 승인 요청 (admin)
-  ANOMALY_DETECTED      // 이상 거래 감지 (admin)
-  SYSTEM                // 시스템 공지
+  DISPATCH_NEW // 새 배차 등록 (차주 알림)
+  DISPATCH_ACCEPTED // 차주가 수락 (포워더 알림)
+  TRIP_DEPARTED // 출발 보고 (포워더 알림)
+  TRIP_LOADED // 상차 완료 (포워더 알림)
+  TRIP_UNLOADED // 하차 완료 (포워더 알림)
+  TRIP_COMPLETED // 운송 완료 (포워더 알림)
+  TRIP_CANCELLED // 운송 취소
+  SETTLEMENT_READY // 정산 확정 대기 (양측)
+  SETTLEMENT_PAID // 정산 지급 완료 (차주 알림)
+  ADMIN_APPROVAL // 가입 승인 요청 (admin)
+  ANOMALY_DETECTED // 이상 거래 감지 (admin)
+  SYSTEM // 시스템 공지
 }
 
 // ─────────────────────────────────────────────
@@ -134,7 +142,7 @@ enum NotificationType {
 model User {
   id           String     @id @default(cuid())
   email        String?    @unique
-  phone        String     @unique          // 차주는 휴대폰 OTP, 그 외는 이메일+phone 보조
+  phone        String     @unique // 차주는 휴대폰 OTP, 그 외는 이메일+phone 보조
   passwordHash String?    @map("password_hash")
   name         String
   role         UserRole
@@ -152,6 +160,7 @@ model User {
   dispatchOrders DispatchOrder[] @relation("ForwarderOrders")
   auditLogs      AuditLog[]      @relation("ActorAuditLogs")
   notifications  Notification[]
+  deviceTokens   DeviceToken[]
 
   @@index([role, status])
   @@map("users")
@@ -160,17 +169,17 @@ model User {
 model TruckDriver {
   id          String   @id @default(cuid())
   userId      String   @unique @map("user_id")
-  driverCode  String   @unique @map("driver_code")          // 사람용 식별자, 예: D-0001
-  licenseNo   String   @unique @map("license_no")           // 화물운송종사자 자격증
+  driverCode  String   @unique @map("driver_code") // 사람용 식별자, 예: D-0001
+  licenseNo   String   @unique @map("license_no") // 화물운송종사자 자격증
   bankName    String   @map("bank_name")
   bankAccount String   @map("bank_account")
   rating      Decimal  @default(5.0) @db.Decimal(3, 2)
   totalTrips  Int      @default(0) @map("total_trips")
-  carrierId   String?  @map("carrier_id")                  // 자가운송사 소속 차주는 NULL 아님
+  carrierId   String?  @map("carrier_id") // 자가운송사 소속 차주는 NULL 아님
   createdAt   DateTime @default(now()) @map("created_at")
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  carrier  Carrier?  @relation(fields: [carrierId], references: [id], onDelete: SetNull)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  carrier  Carrier?         @relation(fields: [carrierId], references: [id], onDelete: SetNull)
   vehicles Vehicle[]
   trips    Trip[]
   assigns  DispatchAssign[]
@@ -180,13 +189,13 @@ model TruckDriver {
 }
 
 model Carrier {
-  id              String   @id @default(cuid())
-  userId          String   @unique @map("user_id")          // 운송사 대표 계정
-  companyName     String   @map("company_name")
-  businessRegNo   String   @unique @map("business_reg_no")  // 사업자등록번호
-  representative  String                                    // 대표자명
-  isInhouse       Boolean  @default(false) @map("is_inhouse") // 자가운송사(차주가 직접 등록한 1인 법인)
-  createdAt       DateTime @default(now()) @map("created_at")
+  id             String   @id @default(cuid())
+  userId         String   @unique @map("user_id") // 운송사 대표 계정
+  companyName    String   @map("company_name")
+  businessRegNo  String   @unique @map("business_reg_no") // 사업자등록번호
+  representative String // 대표자명
+  isInhouse      Boolean  @default(false) @map("is_inhouse") // 자가운송사(차주가 직접 등록한 1인 법인)
+  createdAt      DateTime @default(now()) @map("created_at")
 
   user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   drivers  TruckDriver[]
@@ -196,13 +205,13 @@ model Carrier {
 }
 
 model Forwarder {
-  id              String   @id @default(cuid())
-  userId          String   @unique @map("user_id")
-  companyName     String   @map("company_name")
-  businessRegNo   String   @unique @map("business_reg_no")
-  representative  String
-  contactPhone    String   @map("contact_phone")
-  createdAt       DateTime @default(now()) @map("created_at")
+  id             String   @id @default(cuid())
+  userId         String   @unique @map("user_id")
+  companyName    String   @map("company_name")
+  businessRegNo  String   @unique @map("business_reg_no")
+  representative String
+  contactPhone   String   @map("contact_phone")
+  createdAt      DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -210,13 +219,13 @@ model Forwarder {
 }
 
 model Vehicle {
-  id          String        @id @default(cuid())
-  plateNo     String        @unique @map("plate_no")        // 차량번호
-  type        ContainerType
-  driverId    String?       @map("driver_id")               // 차주 소유 (대부분)
-  carrierId   String?       @map("carrier_id")              // 운송사 소유 (자가운송사 포함)
-  isActive    Boolean       @default(true) @map("is_active")
-  createdAt   DateTime      @default(now()) @map("created_at")
+  id        String        @id @default(cuid())
+  plateNo   String        @unique @map("plate_no") // 차량번호
+  type      ContainerType
+  driverId  String?       @map("driver_id") // 차주 소유 (대부분)
+  carrierId String?       @map("carrier_id") // 운송사 소유 (자가운송사 포함)
+  isActive  Boolean       @default(true) @map("is_active")
+  createdAt DateTime      @default(now()) @map("created_at")
 
   driver  TruckDriver? @relation(fields: [driverId], references: [id], onDelete: SetNull)
   carrier Carrier?     @relation(fields: [carrierId], references: [id], onDelete: SetNull)
@@ -237,10 +246,10 @@ model Vehicle {
 /// Stage 8에서는 병존 (paradigm이 다르므로 강제 통합 X).
 model SafeRate {
   id            Int           @id @default(autoincrement())
-  originRegion  String        @map("origin_region")     // "경기 평택"
+  originRegion  String        @map("origin_region") // "경기 평택"
   port          PortCode
   containerType ContainerType @map("container_type")
-  baseFare      Int           @map("base_fare")          // KRW 정수
+  baseFare      Int           @map("base_fare") // KRW 정수
   effectiveFrom DateTime      @default(now()) @map("effective_from")
   effectiveTo   DateTime?     @map("effective_to")
   createdAt     DateTime      @default(now()) @map("created_at")
@@ -258,23 +267,23 @@ model DispatchOrder {
   id              String              @id @default(cuid())
   orderNo         String              @unique @map("order_no") // 사람용 번호: D26-0001
   forwarderUserId String              @map("forwarder_user_id")
-  originRegion    String              @map("origin_region")    // 시군구 단위
-  originAddress   String              @map("origin_address")   // 상세 주소
+  originRegion    String              @map("origin_region") // 시군구 단위
+  originAddress   String              @map("origin_address") // 상세 주소
   port            PortCode
   containerType   ContainerType       @map("container_type")
-  containerNo     String?             @map("container_no")     // 컨테이너 번호 (배차 시점에 미정 가능)
-  pickupAt        DateTime            @map("pickup_at")        // 상차 희망 시각 (UTC)
-  fare            Int                                          // 안전운임 KRW 정수
+  containerNo     String?             @map("container_no") // 컨테이너 번호 (배차 시점에 미정 가능)
+  pickupAt        DateTime            @map("pickup_at") // 상차 희망 시각 (UTC)
+  fare            Int // 안전운임 KRW 정수
   status          DispatchOrderStatus @default(OPEN)
   shipmentType    ShipmentType        @default(EXPORT_IMPORT) @map("shipment_type") // 환적이면 안전운임 적용 제외
   notes           String?
   createdAt       DateTime            @default(now()) @map("created_at")
   updatedAt       DateTime            @updatedAt @map("updated_at")
 
-  forwarder           User                @relation("ForwarderOrders", fields: [forwarderUserId], references: [id], onDelete: Restrict)
-  assigns             DispatchAssign[]
-  trip                Trip?
-  freightCalculation  FreightCalculation?
+  forwarder          User                @relation("ForwarderOrders", fields: [forwarderUserId], references: [id], onDelete: Restrict)
+  assigns            DispatchAssign[]
+  trip               Trip?
+  freightCalculation FreightCalculation?
 
   @@index([status, pickupAt])
   @@index([forwarderUserId])
@@ -283,10 +292,10 @@ model DispatchOrder {
 }
 
 model DispatchAssign {
-  id              String   @id @default(cuid())
-  dispatchOrderId String   @map("dispatch_order_id")
-  driverId        String   @map("driver_id")
-  acceptedAt      DateTime @default(now()) @map("accepted_at")
+  id              String    @id @default(cuid())
+  dispatchOrderId String    @map("dispatch_order_id")
+  driverId        String    @map("driver_id")
+  acceptedAt      DateTime  @default(now()) @map("accepted_at")
   cancelledAt     DateTime? @map("cancelled_at")
   cancelReason    String?   @map("cancel_reason")
 
@@ -314,34 +323,35 @@ model Trip {
   createdAt       DateTime   @default(now()) @map("created_at")
   updatedAt       DateTime   @updatedAt @map("updated_at")
 
-  dispatchOrder   DispatchOrder       @relation(fields: [dispatchOrderId], references: [id], onDelete: Restrict)
-  driver          TruckDriver         @relation(fields: [driverId], references: [id], onDelete: Restrict)
-  vehicle         Vehicle             @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
-  settlement      Settlement?
-  locationStamps  TripLocationStamp[]
-  emptyRunCharge  EmptyRunCharge?
+  dispatchOrder  DispatchOrder       @relation(fields: [dispatchOrderId], references: [id], onDelete: Restrict)
+  driver         TruckDriver         @relation(fields: [driverId], references: [id], onDelete: Restrict)
+  vehicle        Vehicle             @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  settlement     Settlement?
+  locationStamps TripLocationStamp[]
+  emptyRunCharge EmptyRunCharge?
 
   @@index([driverId, status])
   @@index([status])
   @@map("trips")
 }
 
-/** 공차 운행 보상 (안전운임 제14조).
+/**
+ * 공차 운행 보상 (안전운임 제14조).
  * 차주가 직전 trip 종료 후 다음 trip 출발지까지 10km 이상 공차 이동 시
  * 해당 거리의 안전위탁운임 50%를 보상 청구.
- *
- * MVP에선 자동 감지 + 차주에게 안내까지. Settlement 자동 합산은 Stage 9. */
+ * MVP에선 자동 감지 + 차주에게 안내까지. Settlement 자동 합산은 Stage 9.
+ */
 model EmptyRunCharge {
-  id            String               @id @default(cuid())
-  tripId        String               @unique @map("trip_id")
-  basedOnTripId String               @map("based_on_trip_id")
-  distanceKm    Decimal              @db.Decimal(7, 2) @map("distance_km")
-  chargeKrw     Int                  @map("charge_krw")
-  containerType ContainerType        @map("container_type")
-  status        EmptyRunChargeStatus @default(DETECTED)
-  detectedAt    DateTime             @default(now()) @map("detected_at")
-  noticeShownAt DateTime?            @map("notice_shown_at")
-  pdfDownloadedAt DateTime?          @map("pdf_downloaded_at")
+  id              String               @id @default(cuid())
+  tripId          String               @unique @map("trip_id")
+  basedOnTripId   String               @map("based_on_trip_id")
+  distanceKm      Decimal              @map("distance_km") @db.Decimal(7, 2)
+  chargeKrw       Int                  @map("charge_krw")
+  containerType   ContainerType        @map("container_type")
+  status          EmptyRunChargeStatus @default(DETECTED)
+  detectedAt      DateTime             @default(now()) @map("detected_at")
+  noticeShownAt   DateTime?            @map("notice_shown_at")
+  pdfDownloadedAt DateTime?            @map("pdf_downloaded_at")
 
   trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
 
@@ -350,17 +360,21 @@ model EmptyRunCharge {
   @@map("empty_run_charges")
 }
 
-/** Trip 액션 시점 좌표 스탬프 — 부정 방지/분쟁 증빙용.
- * navigator.geolocation 1회 호출 결과. 백그라운드 추적 X. */
+/**
+ * Trip 액션 시점 좌표 스탬프 — 부정 방지/분쟁 증빙용.
+ * navigator.geolocation 1회 호출 결과. 백그라운드 추적 X.
+ */
 model TripLocationStamp {
-  id          String          @id @default(cuid())
-  tripId      String          @map("trip_id")
-  action      TripStampAction
-  latitude    Decimal         @db.Decimal(10, 7)
-  longitude   Decimal         @db.Decimal(10, 7)
-  /** 디바이스 정확도(m). 50 이하 = 정확. 1000 이상 = 셀룰러 추정. */
-  accuracyM   Decimal?        @db.Decimal(8, 2) @map("accuracy_m")
-  capturedAt  DateTime        @default(now()) @map("captured_at")
+  id         String          @id @default(cuid())
+  tripId     String          @map("trip_id")
+  action     TripStampAction
+  latitude   Decimal         @db.Decimal(10, 7)
+  longitude  Decimal         @db.Decimal(10, 7)
+  /**
+   * 디바이스 정확도(m). 50 이하 = 정확. 1000 이상 = 셀룰러 추정.
+   */
+  accuracyM  Decimal?        @map("accuracy_m") @db.Decimal(8, 2)
+  capturedAt DateTime        @default(now()) @map("captured_at")
 
   trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
 
@@ -377,9 +391,9 @@ model TripLocationStamp {
 model Settlement {
   id           String           @id @default(cuid())
   tripId       String           @unique @map("trip_id")
-  fare         Int                                              // 총 운임 KRW
-  platformFee  Int              @map("platform_fee")            // 플랫폼 수수료 KRW
-  driverPayout Int              @map("driver_payout")           // 차주 수령액 KRW (= fare - platformFee)
+  fare         Int // 총 운임 KRW
+  platformFee  Int              @map("platform_fee") // 플랫폼 수수료 KRW
+  driverPayout Int              @map("driver_payout") // 차주 수령액 KRW (= fare - platformFee)
   status       SettlementStatus @default(DRAFT)
   confirmedAt  DateTime?        @map("confirmed_at")
   paidAt       DateTime?        @map("paid_at")
@@ -395,13 +409,13 @@ model Settlement {
 }
 
 model TaxInvoice {
-  id            String    @id @default(cuid())
-  settlementId  String    @unique @map("settlement_id")
-  invoiceNo     String    @unique @map("invoice_no")
-  amount        Int                                  // 공급가액 (= driverPayout)
-  taxAmount     Int       @map("tax_amount")          // 세액 (보통 0, 화물운송 면세)
-  issuedAt      DateTime  @default(now()) @map("issued_at")
-  externalRef   String?   @map("external_ref")        // 국세청 발행 ID (Phase 2 stub)
+  id           String   @id @default(cuid())
+  settlementId String   @unique @map("settlement_id")
+  invoiceNo    String   @unique @map("invoice_no")
+  amount       Int // 공급가액 (= driverPayout)
+  taxAmount    Int      @map("tax_amount") // 세액 (보통 0, 화물운송 면세)
+  issuedAt     DateTime @default(now()) @map("issued_at")
+  externalRef  String?  @map("external_ref") // 국세청 발행 ID (Phase 2 stub)
 
   settlement Settlement @relation(fields: [settlementId], references: [id], onDelete: Restrict)
 
@@ -413,14 +427,14 @@ model TaxInvoice {
 // ─────────────────────────────────────────────
 
 model OtpCode {
-  id          BigInt    @id @default(autoincrement())
-  phone       String                                       // 가입/로그인 시도 phone (User 미존재 가능, 그래서 FK 없음)
-  code        String                                       // 6자리 숫자
-  expiresAt   DateTime  @map("expires_at")                 // 발급 + 5분
-  consumedAt  DateTime? @map("consumed_at")                // 검증 성공 시 세팅 (재사용 방지)
-  attempts    Int       @default(0)                        // verify 실패 횟수, 5 이상이면 만료 처리
-  ipAddress   String?   @map("ip_address")
-  createdAt   DateTime  @default(now()) @map("created_at")
+  id         BigInt    @id @default(autoincrement())
+  phone      String // 가입/로그인 시도 phone (User 미존재 가능, 그래서 FK 없음)
+  code       String // 6자리 숫자
+  expiresAt  DateTime  @map("expires_at") // 발급 + 5분
+  consumedAt DateTime? @map("consumed_at") // 검증 성공 시 세팅 (재사용 방지)
+  attempts   Int       @default(0) // verify 실패 횟수, 5 이상이면 만료 처리
+  ipAddress  String?   @map("ip_address")
+  createdAt  DateTime  @default(now()) @map("created_at")
 
   @@index([phone, createdAt])
   @@index([expiresAt])
@@ -434,7 +448,7 @@ model OtpCode {
 model AuditLog {
   id          BigInt      @id @default(autoincrement())
   actorUserId String?     @map("actor_user_id")
-  entity      String                                  // "DispatchOrder", "Trip" ...
+  entity      String // "DispatchOrder", "Trip" ...
   entityId    String      @map("entity_id")
   action      AuditAction
   before      Json?
@@ -461,9 +475,13 @@ model Notification {
   type      NotificationType
   title     String
   body      String?
-  /** 클릭 시 이동할 path (예: "/forwarder/dispatch/abc123"). null이면 단순 안내. */
+  /**
+   * 클릭 시 이동할 path (예: "/forwarder/dispatch/abc123"). null이면 단순 안내.
+   */
   link      String?
-  /** 부가 정보 (orderNo, tripId, amount 등). UI 렌더링은 title/body로 처리. */
+  /**
+   * 부가 정보 (orderNo, tripId, amount 등). UI 렌더링은 title/body로 처리.
+   */
   metadata  Json?
   readAt    DateTime?        @map("read_at")
   createdAt DateTime         @default(now()) @map("created_at")
@@ -476,19 +494,58 @@ model Notification {
 }
 
 // ─────────────────────────────────────────────
+// 푸시 디바이스 토큰
+// ─────────────────────────────────────────────
+
+enum DevicePlatform {
+  IOS
+  ANDROID
+  WEB
+}
+
+model DeviceToken {
+  id         String         @id @default(cuid())
+  userId     String         @map("user_id")
+  /**
+   * APNs(iOS) hex 64자 / FCM(Android, Web) registration token
+   */
+  token      String         @unique
+  platform   DevicePlatform
+  /**
+   * 앱 빌드 식별 — 디버깅/롤백용
+   */
+  appBuild   String?        @map("app_build")
+  /**
+   * 마지막 푸시 응답: null=정상, "BadDeviceToken"|"Unregistered" 등 받으면 비활성
+   */
+  lastError  String?        @map("last_error")
+  lastSeenAt DateTime       @default(now()) @map("last_seen_at")
+  createdAt  DateTime       @default(now()) @map("created_at")
+  revokedAt  DateTime?      @map("revoked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([platform, revokedAt])
+  @@map("device_tokens")
+}
+
+// ─────────────────────────────────────────────
 // 안전운임 v2 — 거리 기반 (Stage 8)
 // 국토교통부고시 제2026-55호 + 매년 1월 갱신.
 // 연도별 스냅샷으로 분리해 과거 룰 보존 + 사후 분쟁 대비.
 // ─────────────────────────────────────────────
 
-/** 연도별 고시 스냅샷 — 1년 단위로 효력 분리. */
+/**
+ * 연도별 고시 스냅샷 — 1년 단위로 효력 분리.
+ */
 model SafeFreightYearlySnapshot {
   id            String   @id @default(cuid())
-  fiscalYear    Int      @unique @map("fiscal_year")        // 2026, 2027, ...
-  noticeNumber  String   @map("notice_number")              // "국토교통부고시 제2026-55호"
-  noticeDate    DateTime @map("notice_date")                // 고시일
-  effectiveFrom DateTime @map("effective_from")             // 시행 시작
-  effectiveTo   DateTime @map("effective_to")               // 시행 종료 (보통 effectiveFrom + 1년)
+  fiscalYear    Int      @unique @map("fiscal_year") // 2026, 2027, ...
+  noticeNumber  String   @map("notice_number") // "국토교통부고시 제2026-55호"
+  noticeDate    DateTime @map("notice_date") // 고시일
+  effectiveFrom DateTime @map("effective_from") // 시행 시작
+  effectiveTo   DateTime @map("effective_to") // 시행 종료 (보통 effectiveFrom + 1년)
   createdAt     DateTime @default(now()) @map("created_at")
 
   rates           SafeFreightRate[]
@@ -498,14 +555,16 @@ model SafeFreightYearlySnapshot {
   @@map("safe_freight_yearly_snapshots")
 }
 
-/** 거리·컨테이너·운임타입 매트릭스. (year, distance, container, rateType) 유니크. */
+/**
+ * 거리·컨테이너·운임타입 매트릭스. (year, distance, container, rateType) 유니크.
+ */
 model SafeFreightRate {
   id               String        @id @default(cuid())
   yearlySnapshotId String        @map("yearly_snapshot_id")
-  distanceKm       Int           @map("distance_km")          // 편도 거리
+  distanceKm       Int           @map("distance_km") // 편도 거리
   containerType    ContainerType @map("container_type")
   rateType         RateType      @map("rate_type")
-  amountKrw        Int           @map("amount_krw")           // KRW 정수, VAT 미포함
+  amountKrw        Int           @map("amount_krw") // KRW 정수, VAT 미포함
 
   yearlySnapshot SafeFreightYearlySnapshot @relation(fields: [yearlySnapshotId], references: [id], onDelete: Cascade)
 
@@ -514,13 +573,15 @@ model SafeFreightRate {
   @@map("safe_freight_rates")
 }
 
-/** 할증 코드 마스터 — 연도별로 갱신될 수 있어 스냅샷 종속. */
+/**
+ * 할증 코드 마스터 — 연도별로 갱신될 수 있어 스냅샷 종속.
+ */
 model SurchargeRule {
   id               String  @id @default(cuid())
   yearlySnapshotId String  @map("yearly_snapshot_id")
-  code             String                                   // "REEFER", "EXPLOSIVE", ...
+  code             String // "REEFER", "EXPLOSIVE", ...
   description      String
-  rate             Decimal @db.Decimal(5, 4)                // 0.3000 = 30%, 1.0000 = 100%
+  rate             Decimal @db.Decimal(5, 4) // 0.3000 = 30%, 1.0000 = 100%
 
   yearlySnapshot SafeFreightYearlySnapshot @relation(fields: [yearlySnapshotId], references: [id], onDelete: Cascade)
 
@@ -529,15 +590,17 @@ model SurchargeRule {
   @@map("surcharge_rules")
 }
 
-/** 분기별 유가 연동 조정 (제34조). ±50원 변동 시 적용. */
+/**
+ * 분기별 유가 연동 조정 (제34조). ±50원 변동 시 적용.
+ */
 model FuelPriceAdjustment {
   id                 String   @id @default(cuid())
   yearlySnapshotId   String   @map("yearly_snapshot_id")
   quarterStartDate   DateTime @map("quarter_start_date")
   quarterEndDate     DateTime @map("quarter_end_date")
-  averageDieselPrice Int      @map("average_diesel_price")    // KRW/L
-  baselinePrice      Int      @map("baseline_price")          // 비교 기준 가격
-  adjustmentRate     Decimal  @db.Decimal(6, 5) @map("adjustment_rate") // 양수=인상, 음수=인하
+  averageDieselPrice Int      @map("average_diesel_price") // KRW/L
+  baselinePrice      Int      @map("baseline_price") // 비교 기준 가격
+  adjustmentRate     Decimal  @map("adjustment_rate") @db.Decimal(6, 5) // 양수=인상, 음수=인하
   appliedFrom        DateTime @map("applied_from")
   appliedTo          DateTime @map("applied_to")
   createdAt          DateTime @default(now()) @map("created_at")
@@ -548,35 +611,37 @@ model FuelPriceAdjustment {
   @@map("fuel_price_adjustments")
 }
 
-/** 배차 1건당 안전운임 계산 결과 스냅샷.
- * 사후 분쟁 대비로 ruleVersionSnapshot에 계산 시점 룰 전체를 박아둠. */
+/**
+ * 배차 1건당 안전운임 계산 결과 스냅샷.
+ * 사후 분쟁 대비로 ruleVersionSnapshot에 계산 시점 룰 전체를 박아둠.
+ */
 model FreightCalculation {
-  id                       String        @id @default(cuid())
-  dispatchOrderId          String        @unique @map("dispatch_order_id")
-  containerType            ContainerType @map("container_type")
-  originPortCode           String?       @map("origin_port_code")     // PortCode + 배후단지 코드 모두 받기 위해 String
-  originAddress            String        @map("origin_address")
-  destinationAddress       String        @map("destination_address")
-  totalDistanceKm          Decimal       @db.Decimal(7, 2) @map("total_distance_km") // 터미널 내 거리 포함
+  id                 String        @id @default(cuid())
+  dispatchOrderId    String        @unique @map("dispatch_order_id")
+  containerType      ContainerType @map("container_type")
+  originPortCode     String?       @map("origin_port_code") // PortCode + 배후단지 코드 모두 받기 위해 String
+  originAddress      String        @map("origin_address")
+  destinationAddress String        @map("destination_address")
+  totalDistanceKm    Decimal       @map("total_distance_km") @db.Decimal(7, 2) // 터미널 내 거리 포함
 
-  baseConsignmentRateKrw   Int @map("base_consignment_rate_krw")
-  baseInterCarrierRateKrw  Int @map("base_inter_carrier_rate_krw")
-  baseTransportRateKrw     Int @map("base_transport_rate_krw")
+  baseConsignmentRateKrw  Int @map("base_consignment_rate_krw")
+  baseInterCarrierRateKrw Int @map("base_inter_carrier_rate_krw")
+  baseTransportRateKrw    Int @map("base_transport_rate_krw")
 
-  appliedSurcharges        Json   @map("applied_surcharges")           // [{code, rate, description}]
-  effectiveSurchargeRate   Decimal @db.Decimal(5, 4) @map("effective_surcharge_rate")
-  surchargeAmountKrw       Int     @map("surcharge_amount_krw")        // 위탁운임 기준
+  appliedSurcharges      Json    @map("applied_surcharges") // [{code, rate, description}]
+  effectiveSurchargeRate Decimal @map("effective_surcharge_rate") @db.Decimal(5, 4)
+  surchargeAmountKrw     Int     @map("surcharge_amount_krw") // 위탁운임 기준
 
-  waitingFeeKrw            Int @default(0) @map("waiting_fee_krw")
-  emptyReturnFeeKrw        Int @default(0) @map("empty_return_fee_krw")
-  additionalFeesKrw        Int @default(0) @map("additional_fees_krw")
+  waitingFeeKrw     Int @default(0) @map("waiting_fee_krw")
+  emptyReturnFeeKrw Int @default(0) @map("empty_return_fee_krw")
+  additionalFeesKrw Int @default(0) @map("additional_fees_krw")
 
-  finalConsignmentRateKrw  Int @map("final_consignment_rate_krw")      // 차주 수령액
+  finalConsignmentRateKrw  Int @map("final_consignment_rate_krw") // 차주 수령액
   finalInterCarrierRateKrw Int @map("final_inter_carrier_rate_krw")
-  finalTransportRateKrw    Int @map("final_transport_rate_krw")        // 화주 청구액
+  finalTransportRateKrw    Int @map("final_transport_rate_krw") // 화주 청구액
 
-  calculatedAt             DateTime @default(now()) @map("calculated_at")
-  ruleVersionSnapshot      Json     @map("rule_version_snapshot")      // 시점 룰 전체
+  calculatedAt        DateTime @default(now()) @map("calculated_at")
+  ruleVersionSnapshot Json     @map("rule_version_snapshot") // 시점 룰 전체
 
   dispatchOrder DispatchOrder @relation(fields: [dispatchOrderId], references: [id], onDelete: Cascade)
 
