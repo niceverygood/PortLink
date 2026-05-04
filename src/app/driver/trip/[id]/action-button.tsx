@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import type { TripStatus } from '@prisma/client';
 import { captureLocationOnce } from '@/lib/geolocation';
+import { hapticLight, hapticSuccess, hapticError } from '@/lib/haptics';
 import { updateTripStatusAction } from '../actions';
 
 export function TripActionButton({
@@ -31,6 +32,7 @@ export function TripActionButton({
         type="button"
         disabled={pending || capturing}
         onClick={() => {
+          hapticLight();
           setCapturing(true);
           // 위치 capture는 best-effort — 거부/타임아웃이어도 액션은 진행.
           void captureLocationOnce().then((location) => {
@@ -39,9 +41,11 @@ export function TripActionButton({
               setErr(null);
               const res = await updateTripStatusAction({ tripId, nextStatus, location });
               if (!res.ok) {
+                hapticError();
                 setErr(res.message ?? '상태 변경 실패');
                 return;
               }
+              hapticSuccess();
               router.refresh();
             });
           });
