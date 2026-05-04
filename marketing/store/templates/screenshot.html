@@ -4,104 +4,124 @@
     <meta charset="utf-8" />
     <link rel="stylesheet" href="./_shared.css" />
     <style>
-      /* 1080x1920 (Google) / 1290x2796 (Apple). 둘 다 9:16 근사. CSS는 vh/vw 기반 */
+      /* Base = 1080×1920 (Google Play 정확한 9:16). Apple은 sharp로 contain + navy padding. */
+      html,
+      body {
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+      }
       .canvas {
-        width: 100vw;
-        height: 100vh;
+        width: 1080px;
+        height: 1920px;
         background: linear-gradient(180deg, #0a2540 0%, #061b2e 100%);
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding: 6vh 5vw 4vh;
+        padding: 96px 60px 60px;
       }
+
+      /* === 헤더 영역 (상단 카피) === */
       .header {
         text-align: center;
-        max-width: 90vw;
-        margin-bottom: 4vh;
+        max-width: 920px;
+        margin-bottom: 60px;
       }
       .pill {
         display: inline-block;
-        padding: 0.7vh 1.6vw;
+        padding: 10px 22px;
         border-radius: 999px;
-        background: rgba(255, 107, 53, 0.2);
+        background: rgba(255, 107, 53, 0.18);
         color: var(--orange-light);
-        font-size: 1.6vh;
+        font-size: 22px;
         font-weight: 700;
-        margin-bottom: 1.6vh;
+        margin-bottom: 24px;
+        letter-spacing: 0.02em;
       }
       .headline {
-        font-size: 5.2vh;
+        font-size: 70px;
         font-weight: 900;
         color: var(--white);
         letter-spacing: -0.04em;
-        line-height: 1.1;
+        line-height: 1.12;
       }
       .headline span {
         color: var(--orange);
       }
       .subline {
-        margin-top: 1.4vh;
-        font-size: 2vh;
+        margin-top: 18px;
+        font-size: 26px;
         color: rgba(255, 255, 255, 0.7);
         font-weight: 500;
       }
+
+      /* === 폰 프레임 === */
       .phone-wrap {
         flex: 1;
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         justify-content: center;
-        position: relative;
       }
       .phone-frame {
-        width: 78vw;
-        height: 75vh;
-        max-width: 460px;
+        width: 760px;
+        height: 1100px;
+        border-radius: 56px;
+        box-shadow:
+          0 30px 60px rgba(0, 0, 0, 0.5),
+          0 0 0 10px #1f2937;
+      }
+      .phone-notch {
+        height: 30px;
       }
       .phone-status-bar {
-        font-size: 1.4vh;
+        font-size: 18px;
+        padding: 8px 32px 4px;
       }
-      /* 차주 PWA 화면 미니 재현 */
+
+      /* === 폰 안 콘텐츠 — Driver PWA 미니 재현 === */
       .driver-hero {
         background: var(--navy);
-        padding: 2.4vh 4vw 3vh;
         color: var(--white);
+        padding: 28px 36px 36px;
       }
       .driver-hero .brand-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 2vh;
-        font-size: 1.6vh;
+        margin-bottom: 24px;
+        font-size: 22px;
       }
       .driver-hero .label {
-        font-size: 1.5vh;
+        font-size: 18px;
         opacity: 0.7;
       }
       .driver-hero .big-num {
-        font-size: 4.2vh;
+        font-size: 56px;
         font-weight: 900;
         letter-spacing: -0.04em;
-        margin-top: 0.4vh;
+        margin-top: 6px;
+        white-space: nowrap;
       }
       .driver-stats {
         display: flex;
-        gap: 1.6vw;
-        margin-top: 2vh;
+        gap: 14px;
+        margin-top: 24px;
       }
       .stat {
         flex: 1;
         background: rgba(255, 255, 255, 0.1);
-        padding: 1.2vh 2vw;
-        border-radius: 10px;
+        padding: 14px 16px;
+        border-radius: 14px;
       }
       .stat .k {
-        font-size: 1.2vh;
+        font-size: 14px;
         opacity: 0.6;
       }
       .stat .v {
-        font-size: 2vh;
+        font-size: 24px;
         font-weight: 800;
-        margin-top: 0.4vh;
+        margin-top: 4px;
+        white-space: nowrap;
       }
       .stat.urgent {
         background: rgba(255, 107, 53, 0.2);
@@ -110,19 +130,18 @@
       .stat.urgent .v {
         color: var(--orange);
       }
+
       .driver-body {
-        padding: 2vh 4vw;
+        padding: 22px 24px;
         display: flex;
         flex-direction: column;
-        gap: 1.4vh;
+        gap: 16px;
         background: var(--slate-50);
-        flex: 1;
       }
       .card {
         background: var(--white);
-        border-radius: 16px;
-        padding: 2vh 3vw;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        border-radius: 18px;
+        padding: 20px 22px;
       }
       .card-urgent {
         border: 2px solid var(--orange);
@@ -141,79 +160,83 @@
         align-items: center;
       }
       .card-label {
-        font-size: 1.4vh;
+        font-size: 15px;
         color: var(--slate-500);
         font-weight: 600;
       }
       .card-value {
-        font-size: 2.6vh;
+        font-size: 32px;
         font-weight: 900;
         color: var(--navy);
         letter-spacing: -0.03em;
+        white-space: nowrap;
       }
       .badge-warn {
         background: var(--rose-light);
         color: var(--rose);
-        padding: 0.3vh 1vw;
-        border-radius: 4px;
-        font-size: 1.1vh;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 13px;
         font-weight: 700;
       }
       .badge-success {
         background: var(--emerald-light);
         color: var(--emerald);
-        padding: 0.3vh 1vw;
-        border-radius: 4px;
-        font-size: 1.1vh;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 13px;
         font-weight: 700;
       }
       .route-box {
         display: flex;
-        gap: 1.5vw;
+        gap: 12px;
         align-items: center;
         background: var(--slate-100);
-        padding: 1.4vh 2vw;
-        border-radius: 12px;
-        margin-top: 1vh;
+        padding: 16px 18px;
+        border-radius: 14px;
+        margin-top: 12px;
       }
       .route-box .place {
         flex: 1;
         text-align: center;
       }
       .route-box .place .l {
-        font-size: 1.1vh;
+        font-size: 13px;
         color: var(--slate-500);
       }
       .route-box .place .n {
-        font-size: 2vh;
+        font-size: 26px;
         font-weight: 800;
         color: var(--navy);
+        margin-top: 2px;
+        white-space: nowrap;
       }
       .route-box .arrow {
         color: var(--orange);
-        font-size: 2vh;
+        font-size: 26px;
       }
       .cta-button {
         background: var(--orange);
         color: var(--white);
-        padding: 2vh;
-        border-radius: 16px;
+        padding: 22px;
+        border-radius: 18px;
         text-align: center;
-        font-size: 2vh;
+        font-size: 24px;
         font-weight: 800;
-        margin-top: 1vh;
+        margin-top: 8px;
+        white-space: nowrap;
       }
       .timeline {
         display: flex;
-        gap: 0.8vw;
+        gap: 8px;
         align-items: center;
-        margin-top: 0.5vh;
+        margin-top: 8px;
       }
       .timeline .step {
         flex: 1;
-        height: 0.8vh;
+        height: 10px;
         background: var(--slate-300);
-        border-radius: 4px;
+        border-radius: 5px;
       }
       .timeline .step.done {
         background: var(--emerald);
@@ -223,15 +246,24 @@
       }
       .footer-tag {
         text-align: center;
-        margin-top: 3vh;
-        color: rgba(255, 255, 255, 0.5);
-        font-size: 1.4vh;
+        margin-top: 28px;
+        color: rgba(255, 255, 255, 0.45);
+        font-size: 18px;
+      }
+
+      /* === 화면 콘텐츠 fallback (text wrapping 안전) === */
+      .body-text {
+        font-size: 17px;
+        line-height: 1.5;
+      }
+      .body-text-bold {
+        font-size: 19px;
+        font-weight: 800;
       }
     </style>
   </head>
   <body>
     <div class="canvas" id="capture">
-      <!-- 동적 콘텐츠는 generate.ts가 query param 또는 textContent 치환 -->
       <div class="header">
         <span class="pill" id="pill">⚡ 컨테이너 차주 전용</span>
         <h1 class="headline" id="headline">빈 차로<br /><span>돌아가지 마세요</span></h1>
@@ -245,13 +277,12 @@
             <span>•••</span>
             <span class="tabular">100%</span>
           </div>
-          <div id="screen"><!-- generate.ts가 채움 --></div>
+          <div id="screen"></div>
         </div>
       </div>
       <p class="footer-tag">PortLink Driver</p>
     </div>
     <script>
-      // generate.ts가 호출. 페이지에 콘텐츠 주입.
       window.__setContent = function (cfg) {
         if (cfg.pill) document.getElementById('pill').textContent = cfg.pill;
         if (cfg.headline) document.getElementById('headline').innerHTML = cfg.headline;
