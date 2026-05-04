@@ -14,6 +14,32 @@ const TTL_MS = 5 * 60_000;
 const REQUEST_COOLDOWN_MS = 60_000;
 const MAX_ATTEMPTS = 5;
 
+/**
+ * App Store 심사 전용 OTP 우회 — 다음 4조건 모두 만족 시에만 적용:
+ *   1. env REVIEW_OTP_BYPASS = 6자리 코드 설정
+ *   2. env REVIEW_DEMO_PHONES = "010-3000-0001,010-3000-0002,..." 형식
+ *   3. 요청 phone이 위 화이트리스트에 포함
+ *   4. 입력 코드가 REVIEW_OTP_BYPASS와 일치
+ *
+ * 운영 활성 조건: Vercel 환경변수에 세 값을 설정해야만 작동.
+ * 미설정 시 함수는 항상 false 반환 → 일반 OTP 검증으로 진행.
+ *
+ * 위 우회는 OtpCode 테이블을 건드리지 않으므로 이력 추적 불가 — 심사용 한정.
+ */
+function isReviewBypass(phone: string, code: string): boolean {
+  const bypassCode = process.env.REVIEW_OTP_BYPASS;
+  if (!bypassCode || !/^\d{6}$/.test(bypassCode)) return false;
+  if (code !== bypassCode) return false;
+
+  const allowList = (process.env.REVIEW_DEMO_PHONES ?? '')
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (allowList.length === 0) return false;
+
+  return allowList.includes(phone);
+}
+
 export type OtpRequestError = 'COOLDOWN' | 'INVALID_PHONE';
 export type OtpVerifyError = 'NOT_FOUND' | 'EXPIRED' | 'TOO_MANY_ATTEMPTS' | 'WRONG_CODE';
 
@@ -61,6 +87,13 @@ export async function verifyOtp(opts: {
   code: string;
 }): Promise<Result<{ phone: string }, OtpVerifyError>> {
   const { phone, code } = opts;
+
+  // 심사 우회 — 환경변수 + 화이트리스트 phone에 한해 OTP 검증을 통과시킨다.
+  // OtpCode row를 만들지 않으므로 이력은 별도 audit log로 별도 기록 권장.
+  if (isReviewBypass(phone, code)) {
+    console.warn(`[OTP] review bypass used (phone=${phone})`);
+    return ok({ phone });
+  }
 
   // 가장 최근 활성 OTP 1건만 본다.
   const otp = await prisma.otpCode.findFirst({
