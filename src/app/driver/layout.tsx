@@ -4,6 +4,10 @@ import { UserRole } from '@prisma/client';
 import { auth } from '@/lib/auth';
 import { BottomTabs } from '@/components/driver/BottomTabs';
 import { ServiceWorkerRegister } from '@/components/driver/ServiceWorkerRegister';
+import { NativeAppBridge } from '@/components/driver/NativeAppBridge';
+import { PushRegistration } from '@/components/driver/PushRegistration';
+import { NetworkWatcher } from '@/components/driver/NetworkWatcher';
+import { Toaster } from '@/components/ui/sonner';
 
 export const metadata: Metadata = {
   title: { default: 'PortLink Driver', template: '%s | PortLink Driver' },
@@ -42,6 +46,10 @@ export default async function DriverLayout({ children }: { children: React.React
       <div className="pb-20">{children}</div>
       <BottomTabs />
       <ServiceWorkerRegister />
+      <NativeAppBridge />
+      <PushRegistration />
+      <NetworkWatcher />
+      <Toaster richColors position="top-center" />
     </div>
   );
 }
