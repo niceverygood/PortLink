@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <rect width="1024" height="1024" fill="#FF6B35"/>
+  <g fill="#FFFFFF">
+    <rect x="192" y="368" width="640" height="288" rx="24" ry="24"/>
+  </g>
+  <g stroke="#FF6B35" stroke-width="14" stroke-linecap="round">
+    <line x1="256" y1="384" x2="256" y2="640"/>
+    <line x1="320" y1="384" x2="320" y2="640"/>
+    <line x1="384" y1="384" x2="384" y2="640"/>
+    <line x1="448" y1="384" x2="448" y2="640"/>
+    <line x1="512" y1="384" x2="512" y2="640"/>
+    <line x1="576" y1="384" x2="576" y2="640"/>
+    <line x1="640" y1="384" x2="640" y2="640"/>
+    <line x1="704" y1="384" x2="704" y2="640"/>
+    <line x1="768" y1="384" x2="768" y2="640"/>
+  </g>
+  <g fill="#0A2540">
+    <circle cx="320" cy="708" r="36"/>
+    <circle cx="704" cy="708" r="36"/>
+  </g>
+  <g fill="#FFFFFF" font-family="Helvetica" font-weight="700" font-size="120" text-anchor="middle">
+    <text x="512" y="280">PortLink</text>
+  </g>
+</svg>

@@ -50,3 +50,15 @@ next-env.d.ts
 /prisma/*.db
 /prisma/*.db-journal
 tests/visual/screenshots/
+
+# capacitor / ios native
+/ios/App/build/
+/ios/App/Pods/
+/ios/App/App.xcworkspace/xcuserdata/
+/ios/App/App.xcodeproj/xcuserdata/
+/ios/DerivedData/
+/ios/App/output/
+/ios/.build/
+*.ipa
+*.xcarchive
+ExportOptions.plist

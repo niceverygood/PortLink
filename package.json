@@ -21,6 +21,7 @@
     "prisma:studio": "prisma studio",
     "seed": "tsx prisma/seed.ts",
     "marketing:store": "tsx marketing/store/generate.ts",
+    "screenshots:compose": "tsx marketing/app-store/screenshots-compose.ts",
     "prepare": "husky"
   },
   "prisma": {
@@ -37,6 +38,7 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
+    "@capacitor/network": "^8.0.1",
     "@hookform/resolvers": "^5.2.2",
     "@node-rs/argon2": "^2.0.2",
     "@prisma/client": "^6.19.3",
@@ -66,6 +68,14 @@
     "zod": "^4.4.1"
   },
   "devDependencies": {
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/cli": "^8.3.1",
+    "@capacitor/core": "^8.3.1",
+    "@capacitor/geolocation": "^8.2.0",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.3.1",
+    "@capacitor/push-notifications": "^8.0.3",
+    "@capacitor/splash-screen": "^8.0.1",
     "@commitlint/cli": "^20.5.3",
     "@commitlint/config-conventional": "^20.5.3",
     "@playwright/test": "^1.59.1",

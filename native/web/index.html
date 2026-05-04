@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>PortLink Driver</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo',
+          sans-serif;
+        background: #ff6b35;
+        color: #fff;
+      }
+      .wrap {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 32px;
+        text-align: center;
+        box-sizing: border-box;
+      }
+      h1 {
+        font-size: 28px;
+        margin: 0 0 12px;
+        font-weight: 700;
+      }
+      p {
+        font-size: 15px;
+        line-height: 1.6;
+        opacity: 0.95;
+        margin: 0 0 24px;
+      }
+      button {
+        background: #fff;
+        color: #e55a2b;
+        border: none;
+        border-radius: 12px;
+        padding: 14px 28px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .small {
+        margin-top: 24px;
+        font-size: 12px;
+        opacity: 0.8;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>PortLink Driver</h1>
+      <p>
+        네트워크 연결을 확인 중입니다.<br />연결이 복구되면 자동으로
+        이어집니다.
+      </p>
+      <button onclick="location.reload()">다시 시도</button>
+      <div class="small">차주님, 잠시만 기다려 주세요.</div>
+    </div>
+  </body>
+</html>
