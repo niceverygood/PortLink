@@ -8,9 +8,7 @@
 	<array>
 		<string>applinks:portlink.kr</string>
 		<string>applinks:www.portlink.kr</string>
-		<string>applinks:port-link-snowy.vercel.app</string>
 		<string>webcredentials:portlink.kr</string>
-		<string>webcredentials:port-link-snowy.vercel.app</string>
 	</array>
 </dict>
 </plist>
