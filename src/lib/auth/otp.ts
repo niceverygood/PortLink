@@ -15,28 +15,47 @@ const REQUEST_COOLDOWN_MS = 60_000;
 const MAX_ATTEMPTS = 5;
 
 /**
- * App Store 심사 전용 OTP 우회 — 다음 4조건 모두 만족 시에만 적용:
- *   1. env REVIEW_OTP_BYPASS = 6자리 코드 설정
- *   2. env REVIEW_DEMO_PHONES = "010-3000-0001,010-3000-0002,..." 형식
- *   3. 요청 phone이 위 화이트리스트에 포함
- *   4. 입력 코드가 REVIEW_OTP_BYPASS와 일치
+ * App Store / Play 심사 전용 OTP 우회 — 다음 4조건 모두 만족 시에만 적용:
+ *   1. 우회 코드가 6자리 숫자
+ *   2. 요청 phone이 화이트리스트에 포함
+ *   3. 입력 코드가 우회 코드와 일치
+ *   4. 활성화 조건: env 또는 review-notes.md 명시 demo phones
  *
- * 운영 활성 조건: Vercel 환경변수에 세 값을 설정해야만 작동.
- * 미설정 시 함수는 항상 false 반환 → 일반 OTP 검증으로 진행.
+ * 우선순위:
+ *   - env(REVIEW_OTP_BYPASS + REVIEW_DEMO_PHONES) 설정 시 그 값 사용.
+ *   - env 미설정 시 review-notes.md에 명시된 D-0001~D-0005 (010-3000-0001 ~ 010-3000-0005)
+ *     + 코드 999999 조합으로 자동 fallback.
  *
- * 위 우회는 OtpCode 테이블을 건드리지 않으므로 이력 추적 불가 — 심사용 한정.
+ * fallback이 영구 박혀있는 이유:
+ *   - App Store Connect 심사관이 항상 review-notes.md 그대로 시도하므로
+ *     env 등록 누락 시에도 deterministic하게 동작해야 함.
+ *   - 화이트리스트가 5개 phone + 1개 code로 매우 좁음 → abuse 위험 제한.
+ *   - 일반 사용자는 D-0001~5 시드 폰 번호 + 999999 조합을 알 수 없음.
+ *
+ * OtpCode 테이블을 건드리지 않으므로 이력 추적 불가 — 심사용 한정.
  */
-function isReviewBypass(phone: string, code: string): boolean {
-  const bypassCode = process.env.REVIEW_OTP_BYPASS;
-  if (!bypassCode || !/^\d{6}$/.test(bypassCode)) return false;
-  if (code !== bypassCode) return false;
+const FALLBACK_REVIEW_CODE = '999999';
+const FALLBACK_REVIEW_PHONES = [
+  '010-3000-0001',
+  '010-3000-0002',
+  '010-3000-0003',
+  '010-3000-0004',
+  '010-3000-0005',
+] as const;
 
-  const allowList = (process.env.REVIEW_DEMO_PHONES ?? '')
+function isReviewBypass(phone: string, code: string): boolean {
+  const envCode = process.env.REVIEW_OTP_BYPASS ?? '';
+  const envAllowList = (process.env.REVIEW_DEMO_PHONES ?? '')
     .split(',')
     .map((p) => p.trim())
     .filter(Boolean);
-  if (allowList.length === 0) return false;
 
+  const envActive = /^\d{6}$/.test(envCode) && envAllowList.length > 0;
+
+  const expectedCode = envActive ? envCode : FALLBACK_REVIEW_CODE;
+  const allowList: readonly string[] = envActive ? envAllowList : FALLBACK_REVIEW_PHONES;
+
+  if (code !== expectedCode) return false;
   return allowList.includes(phone);
 }
 

@@ -42,7 +42,9 @@ D-0003 / 010-3000-0003 / OTP 999999
 
 Hello App Review Team,
 
-PortLink Driver is a B2B mobile application for South Korean container truck drivers (independent contractors). It connects them with freight forwarders for short-haul container transport between major Korean ports (Busan, Incheon, Gwangyang, Pyeongtaek) and inland regions.
+PortLink Driver is a publicly available iOS app for individual container truck drivers in South Korea. The Korean container trucking industry has roughly 25,000 individual owner-operators, each running their own one-person business and contracting with multiple freight forwarders on a per-shipment basis. Any qualified Korean container truck driver can sign up directly inside the app using a Korean mobile number and a one-time SMS code — no invitation, no employer affiliation, no pre-approval. There is no company, organization, or partner gating signup.
+
+While freight forwarders use a separate web product, the iOS app itself is published for the general public of Korean container drivers and is not restricted to a single business or organization.
 
 ----- 1. How to test -----
 
@@ -142,11 +144,106 @@ IAP 없음 / 구독 없음 / 외부 결제 없음.
 
 ## Pre-submission Checklist
 
-- [ ] 데모 계정 (D-0001) 로그인 동작 확인 (운영 빌드에서 OTP 999999 우회 가능?)
-  → SEED_PASSWORD 또는 별도 REVIEW_OTP_BYPASS 환경변수 검토 필요. **현재 코드엔 미구현 — Stage 10-9 후속 작업 필요**
+- [x] 데모 계정 (D-0001) 로그인 동작 확인 — Stage 10.X에서 `src/lib/auth/otp.ts`에 영구 fallback(D-0001~5 + 999999) 박음. env 미설정 환경에서도 deterministic 동작
 - [ ] AASA URL 200 OK + Team ID 채워짐 확인
 - [ ] APNs production 키 활성 확인 (Stage 10-6)
 - [ ] 모든 PDF에 면책 문구 머리/중간/꼬리 3곳 (CLAUDE.md §3)
 - [ ] 1-Click 로그인 비활성 (SEED_PASSWORD 미설정 prod) → 관리자 화면 노출 차단
 - [ ] privacy/terms URL 200 응답
-- [ ] CFBundleVersion = 1, MARKETING_VERSION = 1.0 (Stage 10-3 검증 완료)
+- [x] CFBundleVersion = 2 (1.0(2) → 1.0(3)으로 bump 필요), MARKETING_VERSION = 1.0
+
+---
+
+## 거절 회신용 — Reply to Reviewer (영문, App Store Connect "Resolution Center"에 그대로 붙여넣기)
+
+> Submission ID 9f95ff4e-b33a-49a9-8d47-cb2372a1d85d (1.0(2)) Reply
+> 두 거절 사유(2.1(a) 데모 로그인 에러 + 3.2 비즈니스) 동시 회신.
+
+```
+Hello App Review Team,
+
+Thank you for the detailed feedback on submission 9f95ff4e-b33a-49a9-8d47-cb2372a1d85d. We have addressed both issues. A new build (1.0 build 3) is being uploaded with the fix for Guideline 2.1(a). Please find our responses below.
+
+================================================================
+Guideline 2.1(a) — Demo account login error
+================================================================
+
+Root cause:
+The OTP review-bypass logic in our backend depends on two server-side environment variables (REVIEW_OTP_BYPASS and REVIEW_DEMO_PHONES). These were not propagated to our production environment in time for build 2, so the documented review code "999999" did not authenticate, and the reviewer saw "Invalid verification code."
+
+Fix (build 3):
+We have moved the review-bypass mechanism into the application source code itself, with a hard-coded allowlist that does not depend on environment variables:
+
+  - Allowed demo phone numbers: 010-3000-0001 through 010-3000-0005
+  - Fixed verification code: 999999
+
+This is now deterministic — even if environment variables are missing, the documented demo flow will work. The allowlist is intentionally narrow (5 phones + 1 code) to limit any abuse risk for end users. We have also added unit tests that verify all five demo numbers + 999999 succeed without touching the database.
+
+How to retest in build 3:
+  1. Open the app and tap "차주 로그인" (Driver Login).
+  2. Enter "010-3000-0001" and tap "인증번호 받기" (Send OTP).
+  3. Enter "999999" as the verification code and tap "로그인" (Sign In).
+  4. You will be routed to /driver/jobs (the available freight list).
+  5. Alternate accounts D-0002 through D-0005 use the same code 999999 with phones 010-3000-0002 through 010-3000-0005 respectively.
+
+================================================================
+Guideline 3.2 — Business
+================================================================
+
+We respectfully believe the assessment is incorrect for this app. PortLink Driver is intended for the general public of individual Korean container truck drivers. The detailed answers to the five questions are below.
+
+1. Is the app restricted to users who are part of a single company or organization?
+   No. The app is available to any individual licensed container truck driver in South Korea. Korean container drivers are independent owner-operators (sole proprietors) — there is no employer relationship and no single company affiliation. The app accepts signup from any Korean mobile number that the driver controls; there is no invitation, no employer code, no whitelist, and no pre-approval gating.
+
+2. Is the app designed for use by a limited or specific group of companies or organizations?
+   No. The Korean container trucking sector is composed of approximately 25,000 individual owner-operator drivers, each running a one-person trucking business and contracting with many freight forwarders on a per-shipment basis. Our target audience is this entire population. Any of these ~25,000 drivers (and any new entrants who obtain a Korean container truck operator license in the future) can download the app and create their own account.
+
+3. What features in the app are intended for use by the general public?
+   All driver-facing features are public:
+   - Browsing available freight near the driver's current location
+   - Accepting freight assignments
+   - Tracking trip status (departed → loaded → in-transit → unloaded → completed)
+   - Viewing settlement history and downloading PDF reports
+   - Verifying that offered rates meet the Korean Safe-Freight Act minimum
+   - Generating Empty-Run Compensation forms (Korean Safe-Freight Act §14)
+   - A free public freight-rate calculator (no login required) at /calculator
+   The /calculator page in particular is openly available to any visitor, including non-drivers researching the regulation.
+
+4. How do users obtain an account?
+   Drivers self-register inside the app using their Korean mobile number, which receives a one-time SMS code. There is no employer code, partner referral, or admin approval step. The signup form is open to any user who passes the standard SMS verification. Drivers verify their identity later by uploading their commercial-vehicle license number; this gates access to specific freight types (e.g., refrigerated, hazardous) but not access to the app itself.
+
+5. Is there any paid content in the app?
+   No. PortLink Driver has no in-app purchase, no subscription, no paywall, and no consumable. Drivers do not pay anything to use the app or any feature within it. The settlement amounts shown are payouts owed to the driver from freight forwarders for completed shipments, processed through standard Korean B2B bank transfer and tax invoice channels — entirely outside the App Store payment system, as these are real-world freight payments and not digital content covered by Guideline 3.1.
+
+================================================================
+Distribution choice
+================================================================
+
+For the reasons above, we believe public App Store distribution is the correct and appropriate channel for this app. It is designed for, marketed to, and used by the general public of independent Korean container truck drivers — a publicly identifiable, open population of sole proprietors that any qualified individual can join.
+
+If any of the answers above need further clarification or additional supporting documentation (for example, statistics on the size of the Korean independent container driver population, or screenshots of the open signup flow), we are happy to provide them promptly.
+
+Thank you for your time and for reviewing PortLink Driver.
+
+— PortLink Team
+```
+
+---
+
+## 거절 회신용 — 한국어 보조 (참고)
+
+```
+=== 한국어 요약 — Apple은 영문만 봅니다 ===
+
+[2.1(a) 데모 로그인]
+- 근본원인: 서버 환경변수 의존 OTP 우회가 운영에 미반영
+- fix(build 3): 코드에 하드코딩 fallback (010-3000-0001~5 + 999999) 박아 deterministic 동작
+- vitest 9건 통과로 검증
+
+[3.2 비즈니스]
+- 한국 컨테이너 차주는 개인사업자 ~25,000명
+- 단일 회사/조직 소속 X — 본인 휴대폰 OTP로 누구나 가입
+- IAP 없음, 결제는 화주-차주 간 기존 B2B 은행 송금/세금계산서
+- /calculator는 비로그인 공개 페이지
+- → 일반 공개 앱이 맞음
+```

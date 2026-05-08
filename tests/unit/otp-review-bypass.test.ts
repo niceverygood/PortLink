@@ -27,8 +27,22 @@ describe('verifyOtp — review bypass', () => {
     process.env = { ...ENV_KEEP };
   });
 
-  it('환경변수 미설정 시 일반 경로로 진행 (NOT_FOUND, prisma 호출됨)', async () => {
+  it('환경변수 미설정이지만 review-notes.md 명시 phone + 999999 → fallback 우회 OK (prisma 미호출)', async () => {
     const res = await verifyOtp({ phone: '010-3000-0001', code: '999999' });
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.value.phone).toBe('010-3000-0001');
+    expect(prisma.otpCode.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('환경변수 미설정 + fallback 화이트리스트 외 phone → 일반 경로 (NOT_FOUND)', async () => {
+    const res = await verifyOtp({ phone: '010-9999-9999', code: '999999' });
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error).toBe('NOT_FOUND');
+    expect(prisma.otpCode.findFirst).toHaveBeenCalledOnce();
+  });
+
+  it('환경변수 미설정 + fallback phone이지만 코드 999999 아님 → 일반 경로', async () => {
+    const res = await verifyOtp({ phone: '010-3000-0001', code: '111111' });
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error).toBe('NOT_FOUND');
     expect(prisma.otpCode.findFirst).toHaveBeenCalledOnce();
@@ -64,16 +78,15 @@ describe('verifyOtp — review bypass', () => {
     expect(prisma.otpCode.findFirst).toHaveBeenCalledOnce();
   });
 
-  it('REVIEW_OTP_BYPASS만 설정, REVIEW_DEMO_PHONES 비어있으면 우회 안 됨', async () => {
+  it('REVIEW_OTP_BYPASS만 설정 + REVIEW_DEMO_PHONES 비어있으면 env invalid → fallback 적용 (review phone + 999999는 통과)', async () => {
     process.env.REVIEW_OTP_BYPASS = '999999';
 
     const res = await verifyOtp({ phone: '010-3000-0001', code: '999999' });
-    expect(res.ok).toBe(false);
-    if (!res.ok) expect(res.error).toBe('NOT_FOUND');
-    expect(prisma.otpCode.findFirst).toHaveBeenCalledOnce();
+    expect(res.ok).toBe(true);
+    expect(prisma.otpCode.findFirst).not.toHaveBeenCalled();
   });
 
-  it('REVIEW_OTP_BYPASS 형식 비6자리면 우회 안 됨', async () => {
+  it('REVIEW_OTP_BYPASS 형식 비6자리면 env invalid → fallback 적용 (입력 코드 5자리는 통과 안 됨)', async () => {
     process.env.REVIEW_OTP_BYPASS = '12345'; // 5자리
     process.env.REVIEW_DEMO_PHONES = '010-3000-0001';
 
@@ -81,5 +94,19 @@ describe('verifyOtp — review bypass', () => {
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error).toBe('NOT_FOUND');
     expect(prisma.otpCode.findFirst).toHaveBeenCalledOnce();
+  });
+
+  it('fallback phone 5종 (D-0001 ~ D-0005) 모두 999999로 통과', async () => {
+    for (const phone of [
+      '010-3000-0001',
+      '010-3000-0002',
+      '010-3000-0003',
+      '010-3000-0004',
+      '010-3000-0005',
+    ]) {
+      const res = await verifyOtp({ phone, code: '999999' });
+      expect(res.ok).toBe(true);
+    }
+    expect(prisma.otpCode.findFirst).not.toHaveBeenCalled();
   });
 });
