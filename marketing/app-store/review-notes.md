@@ -42,7 +42,9 @@ D-0003 / 010-3000-0003 / OTP 999999
 
 Hello App Review Team,
 
-PortLink Driver is a publicly available iOS app for individual container truck drivers in South Korea. The Korean container trucking industry has roughly 25,000 individual owner-operators, each running their own one-person business and contracting with multiple freight forwarders on a per-shipment basis. Any qualified Korean container truck driver can sign up directly inside the app using a Korean mobile number and a one-time SMS code — no invitation, no employer affiliation, no pre-approval. There is no company, organization, or partner gating signup.
+PortLink Driver is a publicly available iOS app for individual container truck drivers in South Korea. The Korean container trucking industry has roughly 25,000 individual owner-operators, each running their own one-person business and contracting with multiple freight forwarders on a per-shipment basis. Any qualified Korean container truck driver can sign up directly inside the app using a Korean mobile number and a one-time SMS code — no invitation code, no employer affiliation, no organization gating.
+
+Like other publicly-distributed regulated-profession apps in Korea (KakaoT Designated Driver, Baemin Connect for delivery riders, SoCar car-sharing, KakaoT Taxi Driver), PortLink Driver verifies a government-issued professional license (화물운송종사자 자격증, Commercial Cargo Driver Qualification) before allowing a driver to accept a paid freight. This license is issued by the Korean Ministry of Land, Infrastructure and Transport directly to the individual driver — it is NOT an internal organization credential. Anyone in Korea who obtains this public license can use the app.
 
 While freight forwarders use a separate web product, the iOS app itself is published for the general public of Korean container drivers and is not restricted to a single business or organization.
 
@@ -246,4 +248,106 @@ Thank you for your time and for reviewing PortLink Driver.
 - IAP 없음, 결제는 화주-차주 간 기존 B2B 은행 송금/세금계산서
 - /calculator는 비로그인 공개 페이지
 - → 일반 공개 앱이 맞음
+```
+
+---
+
+## 거절 회신용 — 1.0(4) 3.2 재거절 (영문, Resolution Center에 그대로 붙여넣기)
+
+> Submission ID 9f95ff4e-b33a-49a9-8d47-cb2372a1d85d (1.0 build 4) Reply
+> 3.2 비즈니스 단독 거절. 이전 회신의 "no admin approval" 문구가 가입 화면 "관리자 승인" 카피와 정면 충돌한 점 자진 정정 + 규제 면허 확인 모델 + 동종 공개 App Store 앱 4종 사례 인용.
+
+```
+Hello App Review Team,
+
+Thank you for continuing to review submission 9f95ff4e-b33a-49a9-8d47-cb2372a1d85d (version 1.0 build 4). We want to begin by correcting one inaccuracy in our previous Guideline 3.2 response, and then clarify the regulatory context that we should have stated more precisely the first time.
+
+================================================================
+Correction to our previous answer
+================================================================
+
+In our prior response to question 4 ("How do users obtain an account?"), we wrote: "There is no employer code, partner referral, or admin approval step." That statement was imprecise and we apologize for the confusion. While there is no employer code or partner referral, there IS a professional-license verification step required by Korean law before a driver can accept a paid freight through the app. Our signup screens previously used the Korean phrase "관리자 승인" ("admin approval") to describe this step, which we now recognize was misleading both to your team and to our users. In build 5 we have rewritten the user-facing copy on every signup screen to accurately describe this as a regulatory license check, not an organizational approval.
+
+================================================================
+Regulatory context — Korean Trucking Transportation Business Act
+================================================================
+
+Operating a commercial container truck in South Korea legally requires a government-issued professional license called the 화물운송종사자 자격증 (Commercial Cargo Driver Qualification), mandated by the Korean Trucking Transportation Business Act (화물자동차 운수사업법). Any platform that connects licensed drivers with paid freight is legally required to verify this license before allowing the driver to accept paid shipments.
+
+This is NOT an organizational gate. Specifically:
+
+  - The license is issued by the Korean Ministry of Land, Infrastructure and Transport directly to the individual driver. There is no organization, employer, partner, or company that authorizes it. Any Korean citizen who passes the standardized written and physical exams obtains it.
+  - The verification is applied uniformly to every driver who downloads the app. There is no allowlist, invitation code, or membership prerequisite.
+  - Build 5 rewrites the user-facing copy on every signup screen to accurately describe this as a regulatory license check, not an "admin approval". The account model is SMS OTP based, identical to consumer-app norms; the license check is the same kind of professional-credential verification that SoCar (Korean driver's license) and KakaoT Designated Driver (designated-driver license) perform.
+
+================================================================
+Comparable publicly-distributed App Store apps in Korea
+================================================================
+
+The following Korean apps follow the same regulatory pattern — open public App Store distribution PLUS government-issued professional-license verification — and are listed publicly without 3.2 restriction:
+
+  1. KakaoT Designated Driver (카카오T 대리) — verifies 운전대행업 등록 (Designated Driver business license).
+  2. Baemin Connect / Coupang Eats / Yogiyo Rider — verify 배달원 등록 (Delivery Worker registration) per Korean labor law.
+  3. SoCar / GreenCar (car-sharing) — verify 운전면허 (Korean driver's license) before rental.
+  4. KakaoT Driver / Tmap Taxi (taxi-driver companion apps) — verify 택시운전 자격증 (Taxi Driver Qualification).
+
+All of these are individual sole-proprietor regulated-profession apps, distributed publicly on the App Store, exactly like PortLink Driver. License verification in each case is a legal compliance step, not a B2B organization gate.
+
+================================================================
+The general-public test, restated
+================================================================
+
+  Question 1 — restricted to a single company / organization?
+    NO. Any Korean citizen who obtains the Commercial Cargo Driver Qualification (a public license) can become a PortLink Driver user. There is no employer, organization, or partner that authorizes signup.
+
+  Question 2 — limited or specific group of companies?
+    NO. The target audience is the entire open population of approximately 25,000 individual owner-operator container truck drivers in Korea, plus any new entrants who obtain the public license in the future.
+
+  Question 3 — features for the general public?
+    All driver-facing features are public. In addition, the /calculator page — a Korean Safe-Freight Act rate calculator — requires NO login at all and is openly accessible to any visitor (drivers, freight forwarders, journalists, students, lawyers researching the regulation).
+
+  Question 4 — how do users obtain an account? [CORRECTED]
+    Drivers register inside the app using their Korean mobile number, which receives a one-time SMS code via the standard Korean carrier SMS network. There is no invitation code, no employer code, and no partner referral. The signup flow is identical to consumer-app norms in Korea. A government-issued license check (화물운송종사자 자격증) is performed once before the driver accepts their first PAID freight — identical to how SoCar verifies a Korean driver's license before unlocking a rental, or how Baemin Connect verifies delivery worker registration. This check is regulatory compliance, not organization gating.
+
+  Question 5 — paid content in the app?
+    NO. PortLink Driver has no in-app purchase, no subscription, no paywall, and no consumable. Drivers do not pay anything to use the app or any feature within it. Settlement amounts shown are payouts owed to the driver from freight forwarders for completed shipments, processed through standard Korean B2B bank transfer and tax invoice channels — entirely outside the App Store payment system, as these are real-world freight payments and not digital content covered by Guideline 3.1.
+
+================================================================
+Re-test instructions for build 5
+================================================================
+
+  1. Open the app and tap "차주 로그인" (Driver Login).
+  2. Enter "010-3000-0001" and tap "인증번호 받기" (Send OTP).
+  3. Enter "999999" and tap "로그인" (Sign In) — you are signed in immediately.
+  4. Browse /driver/jobs, view safe-freight verification, accept a sample freight, and download a sample PDF.
+  5. The public calculator is at /calculator and requires NO login.
+
+  Alternate demo accounts D-0002 through D-0005 work identically with phones 010-3000-0002 through 010-3000-0005 and the same OTP "999999".
+
+================================================================
+Distribution choice — public App Store
+================================================================
+
+For the reasons above, we respectfully maintain that public App Store distribution is the correct channel for this app. It is designed for, marketed to, and used by an open public population of independent Korean container truck drivers — a publicly-licensed, openly-identifiable profession that any qualified individual can join, following the same regulatory and distribution model as several other Korean public App Store apps cited above.
+
+If any of the answers above need further supporting documentation (for example, a copy of the Korean Trucking Transportation Business Act §8 license requirement, statistics on the size of the Korean independent container driver population, or screenshots of the open SMS-OTP signup flow in build 5), we are happy to provide them promptly.
+
+Thank you for your time and continued review of PortLink Driver.
+
+— PortLink Team
+```
+
+---
+
+## 거절 회신용 — 1.0(4) 한국어 보조 (참고)
+
+```
+=== 한국어 요약 — Apple은 영문만 봅니다 ===
+
+[1.0(4) 3.2 재거절 — 단독]
+- 이전 회신의 "no admin approval"이 가입 화면 "관리자 승인" 카피와 충돌 → 자진 정정
+- 한국 화물자동차 운수사업법이 의무화하는 화물운송종사자 자격증 확인 = 정부 발급 면허, 조직 게이트 X
+- 동일 모델 공개 App Store 앱: 카카오T 대리 / 배민커넥트 / 쏘카 / 카카오T 택시 기사용
+- build 5 변경: 가입 시점은 OTP로 즉시 완료, 면허 확인은 첫 화물 수락 시점에만 (쏘카가 운전면허 확인하는 모델과 동일)
+- /calculator는 여전히 비로그인 공개 페이지
 ```

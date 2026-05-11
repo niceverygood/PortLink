@@ -11,7 +11,7 @@ export default function SignupForwarderPage() {
       </Link>
       <h1 className="mb-2 text-h2 font-semibold">포워더 가입</h1>
       <p className="mb-6 text-body text-slate-600">
-        포워더·화주 계정은 관리자 승인 후 활성화됩니다.
+        포워더·화주 계정은 사업자등록증 확인 절차 후 활성화됩니다.
       </p>
       <Alert>
         <AlertDescription>

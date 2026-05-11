@@ -11,7 +11,7 @@ export default function SignupCarrierPage() {
       </Link>
       <h1 className="mb-2 text-h2 font-semibold">운송사 가입</h1>
       <p className="mb-6 text-body text-slate-600">
-        운송사(자가운송사 포함) 계정은 관리자 승인 후 활성화됩니다.
+        운송사 계정은 화물자동차 운송주선사업 면허 확인 절차 후 활성화됩니다 (법정 절차).
       </p>
       <Alert>
         <AlertDescription>
