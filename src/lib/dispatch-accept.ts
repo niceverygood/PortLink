@@ -19,6 +19,7 @@ export type AcceptError =
   | 'TYPE_MISMATCH'
   | 'NO_VEHICLE'
   | 'DRIVER_NOT_FOUND'
+  | 'INCOMPLETE_PROFILE' // 화물자동차 운수사업법 — licenseNo/bankAccount 미입력 시 차단 (onboarding 강제)
   | 'ALREADY_ACCEPTED';
 
 export interface AcceptResult {
@@ -36,6 +37,11 @@ export async function acceptDispatchOrder(opts: {
   });
   if (!driver) return err('DRIVER_NOT_FOUND');
   if (driver.vehicles.length === 0) return err('NO_VEHICLE');
+  // 화물자동차 운수사업법 — 자격증 + 정산 계좌 등록 후에만 paid freight 수락 가능.
+  // 가입 직후 nullable로 두고 첫 수락 시점에 onboarding으로 강제 리다이렉트.
+  if (!driver.licenseNo || !driver.bankName || !driver.bankAccount) {
+    return err('INCOMPLETE_PROFILE');
+  }
 
   try {
     return await prisma.$transaction(async (tx) => {

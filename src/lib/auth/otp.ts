@@ -104,13 +104,14 @@ export async function requestOtp(opts: {
 export async function verifyOtp(opts: {
   phone: string;
   code: string;
+  consume?: boolean; // false 시 OtpCode.consumedAt 미설정 — signup에서 peek 용도. 기본 true(로그인)
 }): Promise<Result<{ phone: string }, OtpVerifyError>> {
-  const { phone, code } = opts;
+  const { phone, code, consume = true } = opts;
 
   // 심사 우회 — 환경변수 + 화이트리스트 phone에 한해 OTP 검증을 통과시킨다.
   // OtpCode row를 만들지 않으므로 이력은 별도 audit log로 별도 기록 권장.
   if (isReviewBypass(phone, code)) {
-    console.warn(`[OTP] review bypass used (phone=${phone})`);
+    console.warn(`[OTP] review bypass used (phone=${phone}, consume=${consume})`);
     return ok({ phone });
   }
 
@@ -132,9 +133,11 @@ export async function verifyOtp(opts: {
     return err('WRONG_CODE');
   }
 
-  await prisma.otpCode.update({
-    where: { id: otp.id },
-    data: { consumedAt: new Date() },
-  });
+  if (consume) {
+    await prisma.otpCode.update({
+      where: { id: otp.id },
+      data: { consumedAt: new Date() },
+    });
+  }
   return ok({ phone });
 }

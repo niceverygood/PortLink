@@ -16,6 +16,11 @@ const ERROR_MAP: Record<AcceptError, { code: string; message: string; status: nu
   TYPE_MISMATCH: { code: 'TYPE_MISMATCH', message: '차종에 맞는 차량이 없습니다', status: 400 },
   NO_VEHICLE: { code: 'NO_VEHICLE', message: '활성 차량이 없습니다', status: 400 },
   DRIVER_NOT_FOUND: { code: 'DRIVER_NOT_FOUND', message: '차주 프로필이 없습니다', status: 404 },
+  INCOMPLETE_PROFILE: {
+    code: 'INCOMPLETE_PROFILE',
+    message: '자격증과 정산 계좌 등록이 필요합니다 (/driver/onboarding)',
+    status: 412,
+  },
   ALREADY_ACCEPTED: {
     code: 'ALREADY_ACCEPTED',
     message: '이미 다른 차주가 수락한 배차입니다',

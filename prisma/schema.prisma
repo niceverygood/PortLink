@@ -169,10 +169,10 @@ model User {
 model TruckDriver {
   id          String   @id @default(cuid())
   userId      String   @unique @map("user_id")
-  driverCode  String   @unique @map("driver_code") // 사람용 식별자, 예: D-0001
-  licenseNo   String   @unique @map("license_no") // 화물운송종사자 자격증
-  bankName    String   @map("bank_name")
-  bankAccount String   @map("bank_account")
+  driverCode  String   @unique @map("driver_code") // 사람용 식별자, 예: D-0001 (회원가입 시 driver_code_seq에서 자동 발급)
+  licenseNo   String?  @unique @map("license_no") // 화물운송종사자 자격증. 가입 시 null, 첫 화물 수락 전 onboarding에서 입력
+  bankName    String?  @map("bank_name") // 가입 시 null, onboarding에서 입력
+  bankAccount String?  @map("bank_account") // 가입 시 null, onboarding에서 입력
   rating      Decimal  @default(5.0) @db.Decimal(3, 2)
   totalTrips  Int      @default(0) @map("total_trips")
   carrierId   String?  @map("carrier_id") // 자가운송사 소속 차주는 NULL 아님

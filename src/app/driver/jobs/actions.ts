@@ -12,6 +12,7 @@ const ERROR_MESSAGE: Record<AcceptError, string> = {
   TYPE_MISMATCH: '차종에 맞는 차량이 없습니다',
   NO_VEHICLE: '활성 차량이 없습니다',
   DRIVER_NOT_FOUND: '차주 프로필이 없습니다',
+  INCOMPLETE_PROFILE: '자격증과 정산 계좌 등록이 필요합니다 (법정 절차)',
   ALREADY_ACCEPTED: '이미 다른 차주가 수락한 배차입니다',
 };
 
@@ -29,6 +30,9 @@ export async function acceptOrderAction(
   });
 
   if (!result.ok) {
+    if (result.error === 'INCOMPLETE_PROFILE') {
+      redirect('/driver/onboarding?reason=accept-blocked');
+    }
     return { ok: false, message: ERROR_MESSAGE[result.error] };
   }
 
