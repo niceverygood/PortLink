@@ -109,4 +109,18 @@ describe('verifyOtp — review bypass', () => {
     }
     expect(prisma.otpCode.findFirst).not.toHaveBeenCalled();
   });
+
+  it('App Store 5.1.1(v) 회원 탈퇴 시연용 화이트리스트(010-3000-9001~9005)도 통과', async () => {
+    for (const phone of [
+      '010-3000-9001',
+      '010-3000-9002',
+      '010-3000-9003',
+      '010-3000-9004',
+      '010-3000-9005',
+    ]) {
+      const res = await verifyOtp({ phone, code: '999999' });
+      expect(res.ok).toBe(true);
+    }
+    expect(prisma.otpCode.findFirst).not.toHaveBeenCalled();
+  });
 });

@@ -36,11 +36,20 @@ const MAX_ATTEMPTS = 5;
  */
 const FALLBACK_REVIEW_CODE = '999999';
 const FALLBACK_REVIEW_PHONES = [
+  // 데모 로그인용 (D-0001 ~ D-0005, 시드와 1:1 매칭)
   '010-3000-0001',
   '010-3000-0002',
   '010-3000-0003',
   '010-3000-0004',
   '010-3000-0005',
+  // App Store 5.1.1(v) 회원 탈퇴 시연용 (가입 → 탈퇴 흐름 테스트 전용).
+  // 시드에 존재하지 않아 자유롭게 가입 후 삭제 가능. 삭제 후에는 phone이
+  // 'deleted:<id>'로 익명화되어 같은 번호로 재가입 불가 → 다음 번호 사용.
+  '010-3000-9001',
+  '010-3000-9002',
+  '010-3000-9003',
+  '010-3000-9004',
+  '010-3000-9005',
 ] as const;
 
 function isReviewBypass(phone: string, code: string): boolean {

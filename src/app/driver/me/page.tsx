@@ -7,6 +7,7 @@ import { prisma } from '@/lib/db';
 import { DriverAvatar } from '@/components/portlink/DriverAvatar';
 import { ContainerTypeIcon } from '@/components/portlink/ContainerTypeIcon';
 import { Button } from '@/components/ui/button';
+import { DeleteAccountButton } from '@/components/driver/DeleteAccountButton';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: '내 정보' };
@@ -112,6 +113,15 @@ export default async function DriverMePage() {
           로그아웃
         </Button>
       </form>
+
+      <section className="mt-6 rounded-3xl bg-white p-5 shadow-sm">
+        <h2 className="mb-2 text-h2 font-semibold text-slate-900">계정 관리</h2>
+        <p className="mb-3 text-body-sm text-slate-600">
+          더 이상 PortLink를 이용하지 않으시면 아래에서 회원 탈퇴를 진행하실 수 있습니다. 탈퇴 시
+          개인정보는 즉시 익명화되며 다시 로그인하실 수 없습니다.
+        </p>
+        <DeleteAccountButton />
+      </section>
     </main>
   );
 }

@@ -33,6 +33,24 @@ D-0002 / 010-3000-0002 / OTP 999999
 D-0003 / 010-3000-0003 / OTP 999999
 ```
 
+### Throwaway numbers for the Account Deletion test (5.1.1(v))
+
+These numbers are NOT pre-seeded — they exist only on the OTP bypass allowlist so the
+reviewer can sign up a fresh account, exercise the full delete flow, and discard it.
+
+```
+010-3000-9001 / OTP 999999
+010-3000-9002 / OTP 999999
+010-3000-9003 / OTP 999999
+010-3000-9004 / OTP 999999
+010-3000-9005 / OTP 999999
+```
+
+Recommended flow: sign up with 010-3000-9001 → land on /driver/jobs → tap the "내 정보"
+(Me) tab → scroll to "계정 관리" (Account Management) → tap "회원 탈퇴" (Delete
+Account) → type "탈퇴" in the confirmation field → tap "탈퇴하기" → the account is
+deleted in-app and you are signed out.
+
 ---
 
 ## Notes (영문, 4,000자 한도)
@@ -350,4 +368,167 @@ Thank you for your time and continued review of PortLink Driver.
 - 동일 모델 공개 App Store 앱: 카카오T 대리 / 배민커넥트 / 쏘카 / 카카오T 택시 기사용
 - build 5 변경: 가입 시점은 OTP로 즉시 완료, 면허 확인은 첫 화물 수락 시점에만 (쏘카가 운전면허 확인하는 모델과 동일)
 - /calculator는 여전히 비로그인 공개 페이지
+```
+
+---
+
+## 거절 회신용 — 1.0(5) 5.1.1(v) 계정 삭제 (긴 영문 원본, 4,000자 한도 초과 — 참고용)
+
+> Submission ID 9f95ff4e-b33a-49a9-8d47-cb2372a1d85d (1.0 build 5) Reply
+> Guideline 5.1.1(v) 단독 거절. 앱 내 계정 삭제 미구현 → build 6에서 in-app 삭제 흐름 추가.
+
+```
+Hello App Review Team,
+
+Thank you for the detailed feedback on submission 9f95ff4e-b33a-49a9-8d47-cb2372a1d85d (version 1.0 build 5). We have implemented full in-app account deletion in build 6 in response to Guideline 5.1.1(v).
+
+================================================================
+Guideline 5.1.1(v) — Account Deletion
+================================================================
+
+What we added in build 6:
+- A "회원 탈퇴" (Delete Account) entry point in the existing "내 정보" (Me) tab, immediately below "로그아웃" (Sign Out), inside a dedicated "계정 관리" (Account Management) card.
+- A two-step confirmation: tapping the entry opens a sheet that lists exactly what will be removed, warns that the same phone number cannot be re-registered after deletion, and requires the user to type the keyword "탈퇴" (delete) into a text field before the destructive button enables.
+- A single POST request to /api/account/delete that performs the deletion atomically inside one database transaction, then signs the user out and returns them to the public landing page.
+
+Data handled at deletion:
+- Personally identifiable information (full name, email, phone number, password hash, driver license number, bank name, and bank account number) is immediately anonymized — overwritten in place inside the same transaction.
+- The user's notification queue and registered push-notification device tokens (APNs / FCM) are immediately and permanently deleted, so no further notifications or backend pushes can reach the user.
+- The user account is set to status SUSPENDED with a deletedAt timestamp, which permanently blocks every login path (phone OTP, email+password, all NextAuth providers).
+- The phone number is rewritten to an anonymous internal identifier so the same Korean mobile number cannot be re-used to re-register the same account.
+- Trip records, settlement records, and tax invoice records are retained in anonymized form, because Korean tax law (국세기본법 §85-3) and the Korean Trucking Transportation Business Act both require five-year retention of freight transaction records. After deletion these records no longer point to identifiable personal data — only the anonymized account row.
+
+No customer service required. No phone call required. No email required. The entire flow is in-app, takes about ten seconds, and ends with the user signed out of the app.
+
+================================================================
+How to test in build 6
+================================================================
+
+To preserve our pre-seeded demo accounts (D-0001 through D-0005) for navigation testing, we have allow-listed five additional throwaway phone numbers specifically for the deletion test. None of these are seeded — they exist only on the OTP bypass list so reviewers can sign up a fresh account, exercise the delete flow, and discard it.
+
+  Phone numbers reserved for deletion testing:
+    010-3000-9001
+    010-3000-9002
+    010-3000-9003
+    010-3000-9004
+    010-3000-9005
+  Fixed verification code: 999999
+
+Step-by-step:
+  1. Open the app and tap "차주 가입" (Driver Signup) on the welcome screen. (Or tap "차주 로그인" and follow the same OTP flow — first-time use auto-creates the account.)
+  2. Enter phone "010-3000-9001" and tap "인증번호 받기" (Send OTP).
+  3. Enter "999999" as the verification code and complete signup. You will land on /driver/jobs.
+  4. Tap the "내 정보" (Me) tab at the bottom.
+  5. Scroll to the "계정 관리" (Account Management) card at the bottom of the page.
+  6. Tap "회원 탈퇴" (Delete Account). A confirmation sheet appears explaining what data will be removed.
+  7. Type "탈퇴" (delete) into the confirmation field. The "탈퇴하기" (Delete) button becomes enabled.
+  8. Tap "탈퇴하기". The deletion completes in approximately one second; a success toast appears and the app signs you out and returns to the public landing page.
+  9. To verify the account cannot be reused: tap "차주 로그인" again, enter "010-3000-9001" + "999999". The OTP succeeds (the bypass list still includes the number), but the credentials provider rejects the login because the underlying account is SUSPENDED. You will not be able to sign back in to the deleted account.
+
+If 010-3000-9001 has already been used by a previous reviewer (and therefore cannot be re-registered), please use 010-3000-9002 through 010-3000-9005 instead — any one of them works identically.
+
+================================================================
+Account deletion does NOT require customer service
+================================================================
+
+To address one specific point in the rejection letter: PortLink Driver does not require users to contact customer support, call a phone number, or send an email to delete their account. Account deletion is completed entirely inside the app, in approximately ten seconds, from a clearly-labelled entry point in the Me tab.
+
+The two-step confirmation (a warning sheet plus a keyword that the user must explicitly type) is included solely to prevent accidental deletion — Apple explicitly permits this kind of confirmation step under Guideline 5.1.1(v) — and does not gate deletion on any external action.
+
+================================================================
+A short note on retained anonymized records
+================================================================
+
+We retain anonymized freight transaction records (Trip, Settlement, TaxInvoice) for the legal minimum period required by Korean tax law (five years) after deletion. After the deletion is complete, these records no longer reference any personal data — name, email, phone number, license number, and bank details have all been overwritten. The user's account is no longer reachable via login.
+
+If your team prefers that we describe this nuance differently in our Privacy Policy or in this answer, we are happy to revise either. The relevant Korean legal references are:
+
+  - 개인정보 보호법 (Personal Information Protection Act) §21 — anonymization of retained records after the purpose of collection ends.
+  - 국세기본법 (Framework Act on National Taxes) §85-3 — five-year retention of tax invoice records.
+  - 화물자동차 운수사업법 (Trucking Transportation Business Act) §44 — retention of dispatch and settlement records.
+
+================================================================
+Demo video
+================================================================
+
+If a screen recording would be helpful, we will be glad to provide one captured on a physical device showing the full signup → deletion flow. Please let us know and we will attach it to a follow-up message.
+
+Thank you for your time and for reviewing PortLink Driver.
+
+— PortLink Team
+```
+
+---
+
+## 거절 회신용 — 1.0(5) 5.1.1(v) **트리밍판** (3,500자 이내, Resolution Center에 그대로 붙여넣기)
+
+```
+Hello App Review Team,
+
+Build 6 implements full in-app account deletion in response to Guideline 5.1.1(v). No customer service, phone call, or email is required — the entire flow runs inside the app.
+
+================================================================
+What we added in build 6
+================================================================
+
+• A "회원 탈퇴" (Delete Account) entry in the "내 정보" (Me) tab, inside a "계정 관리" (Account Management) card directly below "로그아웃" (Sign Out).
+• Two-step confirmation: an explanation sheet that lists exactly what will be removed, plus a text field where the user must type the keyword "탈퇴" before the destructive button enables. (Apple permits confirmation steps under 5.1.1(v); this only prevents accidents.)
+• POST /api/account/delete performs deletion atomically in a single DB transaction, then signs the user out and returns them to the public landing page.
+
+Data handled at deletion:
+• Personally identifiable information — name, email, phone number, password hash, professional driver license number, bank name, and bank account number — is immediately anonymized (overwritten in place inside the same transaction).
+• Notification queue and registered push tokens (APNs / FCM) are immediately and permanently deleted, so no further backend pushes can reach the user.
+• Account status is set to SUSPENDED with a deletedAt timestamp. Every login path (phone OTP, email+password, all NextAuth providers) rejects the account afterward.
+• The phone number is rewritten to an anonymous internal identifier so the same Korean mobile number cannot be re-used to re-register the same account.
+• Freight transaction records (Trip, Settlement, TaxInvoice) are retained in fully anonymized form for the legal minimum period required by Korean tax law (5 years, 국세기본법 §85-3) and the Korean Trucking Transportation Business Act (§44). After deletion these records reference no personal data.
+
+================================================================
+How to test in build 6
+================================================================
+
+To keep our pre-seeded demo accounts (D-0001 ~ D-0005) intact for other navigation testing, we have allow-listed five throwaway phone numbers specifically for the deletion test. None are seeded — they exist only on the OTP bypass list so reviewers can sign up, delete, and discard.
+
+  Deletion-test phones: 010-3000-9001 / 9002 / 9003 / 9004 / 9005
+  Fixed OTP code:       999999
+
+Steps:
+  1. Open the app and tap "차주 가입" (Driver Signup) on the welcome screen.
+  2. Enter phone "010-3000-9001" → tap "인증번호 받기" (Send OTP).
+  3. Enter "999999" → complete signup → you land on /driver/jobs.
+  4. Tap the "내 정보" (Me) tab.
+  5. Scroll to the "계정 관리" card at the bottom.
+  6. Tap "회원 탈퇴" (Delete Account). A confirmation sheet appears.
+  7. Type "탈퇴" in the confirmation field → tap "탈퇴하기" (Delete).
+  8. The deletion completes in ~1 second; you are signed out automatically.
+
+To verify the account cannot be reused: tap "차주 로그인" again, enter "010-3000-9001" + "999999". OTP succeeds, but credentials login rejects the account (SUSPENDED). You cannot sign back in.
+
+If 010-3000-9001 has already been used by a previous reviewer, use any of 010-3000-9002 ~ 9005 — they work identically.
+
+If a screen recording on a physical device would help, we will gladly attach one in a follow-up message.
+
+Thank you,
+— PortLink Team
+```
+
+---
+
+## 거절 회신용 — 1.0(5) 한국어 보조 (참고)
+
+```
+=== 한국어 요약 — Apple은 영문만 봅니다 ===
+
+[1.0(5) 5.1.1(v) 거절 — 단독]
+- 거절 사유: 앱 내 회원 탈퇴 진입점 부재
+- build 6 추가:
+  · /driver/me 하단 "계정 관리" 카드 + "회원 탈퇴" 버튼
+  · 2단계 확인: 안내 + 키워드 "탈퇴" 입력 검증
+  · POST /api/account/delete → 트랜잭션 1회로 익명화 + signOut
+- 익명화 범위: 이름 / 이메일 / 휴대폰 / 비밀번호 / 자격증 / 계좌
+- 즉시 삭제: Notification, DeviceToken (APNs/FCM)
+- status=SUSPENDED + deletedAt 기록 → 모든 로그인 경로 차단
+- 같은 번호 재가입 불가 (phone='deleted:<id>'로 재작성)
+- 보존: Trip / Settlement / TaxInvoice (국세기본법 §85-3, 화물자동차 운수사업법 §44 — 5년)
+- 데모용 화이트리스트 5개 추가: 010-3000-9001~9005
+  → reviewer가 fresh 가입 후 탈퇴 시연 → D-0001~5 시드 무손상
 ```

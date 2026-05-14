@@ -148,6 +148,7 @@ model User {
   role         UserRole
   status       UserStatus @default(PENDING_APPROVAL)
   lastLoginAt  DateTime?  @map("last_login_at")
+  deletedAt    DateTime?  @map("deleted_at") // 회원 탈퇴 시점(soft delete). PII는 별도로 익명화.
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
 
