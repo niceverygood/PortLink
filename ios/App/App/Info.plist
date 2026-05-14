@@ -51,6 +51,10 @@
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>배차 출발·도착 등 운송 단계 시점에 좌표를 1회 기록하고, 안전운임 §14에 따른 공차 보상 권리를 자동으로 안내드리기 위해 위치 정보를 사용합니다. 백그라운드에서는 위치를 추적하지 않습니다.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>본 앱은 백그라운드에서 위치를 추적하지 않습니다. 위치 정보는 차주님이 운송 단계 버튼(출발/상차/하차 등)을 직접 누른 시점에만 1회 기록되며, 앱이 종료된 동안에는 어떠한 위치도 수집되지 않습니다.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>본 앱은 백그라운드에서 위치를 추적하지 않습니다. 위치 정보는 차주님이 운송 단계 버튼(출발/상차/하차 등)을 직접 누른 시점에만 1회 기록됩니다.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>운송증빙(인수증, 컨테이너 번호) 사진 촬영을 위해 사용합니다. 차주님이 직접 카메라를 여는 경우에만 동작합니다.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
